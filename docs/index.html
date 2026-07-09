@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Suivi Alternance</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎯</text></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-icon">🎯</span>
+      <div>
+        <h1>Suivi Alternance</h1>
+        <p class="brand-sub" id="email-utilisateur"></p>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-tab="dashboard">🏠 Tableau de bord</button>
+      <button class="tab" data-tab="offres">📋 Offres</button>
+      <button class="tab" data-tab="pipeline">📌 Pipeline</button>
+      <button class="tab" data-tab="entreprises">🏢 Entreprises</button>
+      <button class="tab" data-tab="criteres">⚙️ Critères</button>
+    </nav>
+    <div class="topbar-actions">
+      <button id="btn-theme" class="pill" title="Basculer clair / sombre">🌓</button>
+      <button id="btn-deconnexion" class="pill" title="Se déconnecter">Déconnexion</button>
+    </div>
+  </header>
+
+  <main id="app" hidden>
+    <!-- Tableau de bord -->
+    <section id="tab-dashboard" class="panel active">
+      <div class="tiles" id="kpi-tiles"></div>
+      <div class="dash-grid">
+        <div class="card">
+          <h2>📬 Relances du jour</h2>
+          <div id="relances-jour"></div>
+        </div>
+        <div class="card">
+          <h2>🧭 Répartition par domaine</h2>
+          <div id="repartition-domaines"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>🆕 Dernières offres ajoutées</h2>
+        <div id="dernieres-offres"></div>
+      </div>
+    </section>
+
+    <!-- Offres -->
+    <section id="tab-offres" class="panel">
+      <div class="filtres">
+        <input type="search" id="filtre-texte" placeholder="Rechercher (titre, entreprise, lieu)…">
+        <select id="filtre-domaine"><option value="">Tous les domaines</option></select>
+        <select id="filtre-statut">
+          <option value="">Tous les statuts</option>
+          <option value="nouvelle">🆕 Nouvelle</option>
+          <option value="a_postuler">📝 À postuler</option>
+          <option value="envoyee">📤 Envoyée</option>
+          <option value="entretien">🗣️ Entretien</option>
+          <option value="acceptee">✅ Acceptée</option>
+          <option value="refusee">❌ Refusée</option>
+          <option value="ecartee">✖ Écartée</option>
+        </select>
+        <button id="btn-ajouter-offre" class="pill pill-action">➕ Ajouter une offre</button>
+      </div>
+
+      <div id="zone-ajout-offre" class="card" hidden>
+        <h2>➕ Nouvelle offre</h2>
+        <form id="form-ajout-offre" class="form-ajout">
+          <input type="text" id="ajout-titre" placeholder="Intitulé du poste *" required>
+          <input type="text" id="ajout-entreprise" placeholder="Entreprise *" required>
+          <input type="text" id="ajout-lieu" placeholder="Lieu (ex. Paris, hybride)">
+          <input type="url" id="ajout-lien" placeholder="Lien vers l'annonce (https://…)">
+          <select id="ajout-domaine"><option value="">— Domaine —</option></select>
+          <textarea id="ajout-resume" rows="2" placeholder="Résumé de l'offre (facultatif)"></textarea>
+          <div class="editeur-boutons">
+            <button type="submit" class="btn-mini btn-ok">💾 Ajouter</button>
+            <button type="button" id="btn-annuler-ajout" class="btn-mini">Annuler</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="table-wrap card">
+        <table id="table-offres">
+          <thead>
+            <tr><th>Offre</th><th>Entreprise</th><th>Lieu</th><th>Domaine</th><th>Publiée</th><th>Statut</th><th></th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <p id="offres-vide" class="vide" hidden>Aucune offre ne correspond à ces filtres.</p>
+      </div>
+    </section>
+
+    <!-- Pipeline -->
+    <section id="tab-pipeline" class="panel">
+      <div class="kanban" id="kanban"></div>
+      <p id="pipeline-vide" class="vide" hidden>
+        Aucune candidature en cours.<br>
+        Va dans l'onglet <strong>📋 Offres</strong> et clique <strong>📝 À postuler</strong> sur une offre —
+        sa carte apparaîtra ici, et tu pourras la faire glisser d'étape en étape.
+      </p>
+    </section>
+
+    <!-- Entreprises -->
+    <section id="tab-entreprises" class="panel">
+      <div class="cartes-entreprises" id="liste-entreprises"></div>
+      <div id="fiches-manquantes" class="card fiches-manquantes" hidden></div>
+      <p id="entreprises-vide" class="vide" hidden>Aucune fiche entreprise pour l'instant.</p>
+    </section>
+
+    <!-- Critères -->
+    <section id="tab-criteres" class="panel">
+      <div id="zone-criteres"></div>
+    </section>
+  </main>
+
+  <div id="erreur-chargement" class="erreur" hidden>
+    <h2>⚠️ Impossible de charger tes données</h2>
+    <p>Vérifie ta connexion internet, puis recharge la page.</p>
+    <p><code id="erreur-detail"></code></p>
+  </div>
+
+  <footer class="pied">
+    Tes données sont privées — seul ton compte peut les voir.<br>
+    <span class="pied-credit">Suivi Alternance · projet open-source gratuit, construit avec Claude Code</span>
+  </footer>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

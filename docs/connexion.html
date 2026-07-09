@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connexion — Suivi Alternance</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎯</text></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="page-auth">
+    <div class="card carte-auth">
+      <div class="brand brand-auth">
+        <span class="brand-icon">🎯</span>
+        <div>
+          <h1>Suivi Alternance</h1>
+          <p class="brand-sub">Ton assistant de recherche d'alternance — gratuit</p>
+        </div>
+      </div>
+
+      <h2 id="titre-auth">Se connecter</h2>
+
+      <form id="form-auth">
+        <label for="champ-email">Email</label>
+        <input type="email" id="champ-email" autocomplete="email" required placeholder="toi@exemple.fr">
+
+        <label for="champ-mdp">Mot de passe</label>
+        <input type="password" id="champ-mdp" autocomplete="current-password" required placeholder="••••••••">
+
+        <p id="message-auth" class="message-auth" hidden></p>
+
+        <button type="submit" id="btn-connexion" class="btn-principal">→ Se connecter</button>
+      </form>
+
+      <div class="liens-auth">
+        <button type="button" id="btn-inscription" class="lien-discret">Pas encore de compte ? En créer un</button>
+        <button type="button" id="btn-oubli" class="lien-discret">Mot de passe oublié</button>
+      </div>
+    </div>
+
+    <p class="pied">Tes données restent privées : seul ton compte peut les voir.</p>
+  </main>
+
+  <script type="module" src="js/connexion.js"></script>
+</body>
+</html>

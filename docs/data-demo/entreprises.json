@@ -1,0 +1,32 @@
+{
+  "_description": "DONNÉES FACTICES pour le mode démo. Aucune entreprise réelle.",
+  "entreprises": [
+    {
+      "id": "demo-ent-novatech",
+      "nom": "NovaTech Solutions",
+      "linkedin_url": "https://example.com/company/novatech",
+      "secteur": "Éditeur de logiciels SaaS",
+      "taille": "50-200 employés",
+      "description": "Plateforme de gestion pour les collectivités locales.",
+      "posts_recents": [
+        "Levée de fonds série A de 8 M€ pour accélérer le développement produit",
+        "Recrutement de 10 alternants pour la rentrée 2026"
+      ],
+      "contacts": [],
+      "notes": "Culture très orientée mentorat des juniors — bon point pour l'alternance."
+    },
+    {
+      "id": "demo-ent-datapulse",
+      "nom": "DataPulse",
+      "linkedin_url": "https://example.com/company/datapulse",
+      "secteur": "Data & Intelligence Artificielle",
+      "taille": "10-50 employés",
+      "description": "Solutions de prédiction de la demande pour le retail.",
+      "posts_recents": [
+        "Publication d'un article de recherche sur les modèles de séries temporelles"
+      ],
+      "contacts": [],
+      "notes": "Petite équipe : l'alternant toucherait à tout, du modèle au déploiement."
+    }
+  ]
+}

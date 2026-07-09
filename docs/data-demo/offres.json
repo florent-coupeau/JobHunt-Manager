@@ -1,0 +1,151 @@
+{
+  "_description": "DONNÉES FACTICES pour le mode démo. Aucune entreprise réelle. Schéma v3 : un seul statut par offre.",
+  "offres": [
+    {
+      "id": "demo-001",
+      "titre": "Alternance Développeur Full-Stack (H/F)",
+      "entreprise": "NovaTech Solutions",
+      "lieu": "Paris (hybride)",
+      "lien": "https://example.com/offre/demo-001",
+      "date_publication": "2026-07-01",
+      "date_ajout": "2026-07-02",
+      "domaine": "ingenierie-logicielle",
+      "description_resume": "Développement d'une plateforme SaaS en React/Node, équipe de 8 devs, alternance 12-24 mois.",
+      "statut": "entretien",
+      "date_candidature": "2026-07-03",
+      "date_relance_prevue": null,
+      "notes": "Entretien technique prévu le 12/07 avec le lead dev.",
+      "historique": [
+        { "date": "2026-07-03", "evenement": "📤 Envoyée" },
+        { "date": "2026-07-07", "evenement": "🗣️ Entretien" }
+      ]
+    },
+    {
+      "id": "demo-002",
+      "titre": "Alternant Data Scientist — équipe IA (H/F)",
+      "entreprise": "DataPulse",
+      "lieu": "Lyon (télétravail partiel)",
+      "lien": "https://example.com/offre/demo-002",
+      "date_publication": "2026-06-28",
+      "date_ajout": "2026-07-02",
+      "domaine": "data-ia",
+      "description_resume": "Modèles de prédiction pour le retail, stack Python/scikit-learn, encadrement par un senior.",
+      "statut": "envoyee",
+      "date_candidature": "2026-06-30",
+      "date_relance_prevue": "2026-07-08",
+      "notes": "Relance à faire auprès de la RH.",
+      "historique": [
+        { "date": "2026-06-30", "evenement": "📤 Envoyée" }
+      ]
+    },
+    {
+      "id": "demo-003",
+      "titre": "Alternance Analyste Cybersécurité SOC (H/F)",
+      "entreprise": "CyberGarde",
+      "lieu": "Toulouse (présentiel)",
+      "lien": "https://example.com/offre/demo-003",
+      "date_publication": "2026-07-05",
+      "date_ajout": "2026-07-06",
+      "domaine": "cybersecurite",
+      "description_resume": "Surveillance SOC niveau 1, analyse d'incidents, certification SANS financée.",
+      "statut": "envoyee",
+      "date_candidature": "2026-07-06",
+      "date_relance_prevue": "2026-07-13",
+      "notes": "Candidature envoyée via le site carrière.",
+      "historique": [
+        { "date": "2026-07-06", "evenement": "📤 Envoyée" }
+      ]
+    },
+    {
+      "id": "demo-004",
+      "titre": "Assistant Chef de Projet IT en alternance (H/F)",
+      "entreprise": "Projexia Conseil",
+      "lieu": "Nantes (hybride)",
+      "lien": "https://example.com/offre/demo-004",
+      "date_publication": "2026-06-20",
+      "date_ajout": "2026-06-22",
+      "domaine": "gestion-projet",
+      "description_resume": "Pilotage de projets de migration cloud pour des PME, méthodologie agile.",
+      "statut": "refusee",
+      "date_candidature": "2026-06-23",
+      "date_relance_prevue": null,
+      "notes": "Refus : ils cherchaient un profil déjà expérimenté en AMOA.",
+      "historique": [
+        { "date": "2026-06-23", "evenement": "📤 Envoyée" },
+        { "date": "2026-07-01", "evenement": "❌ Refusée" }
+      ]
+    },
+    {
+      "id": "demo-005",
+      "titre": "Alternance Développeur Python Backend (H/F)",
+      "entreprise": "Heliobyte",
+      "lieu": "Full remote (France)",
+      "lien": "https://example.com/offre/demo-005",
+      "date_publication": "2026-07-06",
+      "date_ajout": "2026-07-07",
+      "domaine": "ingenierie-logicielle",
+      "description_resume": "API de gestion énergétique, FastAPI/PostgreSQL, équipe 100% remote.",
+      "statut": "a_postuler",
+      "date_candidature": null,
+      "date_relance_prevue": null,
+      "notes": "Personnaliser la lettre avec leur post récent sur l'efficacité énergétique.",
+      "historique": [
+        { "date": "2026-07-07", "evenement": "📝 À postuler" }
+      ]
+    },
+    {
+      "id": "demo-006",
+      "titre": "Alternance Data Analyst (H/F)",
+      "entreprise": "Silvamap",
+      "lieu": "Bordeaux (hybride)",
+      "lien": "https://example.com/offre/demo-006",
+      "date_publication": "2026-06-12",
+      "date_ajout": "2026-06-14",
+      "domaine": "data-ia",
+      "description_resume": "Cartographie forestière : tableaux de bord et analyses géospatiales pour les collectivités.",
+      "statut": "acceptee",
+      "date_candidature": "2026-06-15",
+      "date_relance_prevue": null,
+      "notes": "Proposition de contrat reçue ! Réponse à donner avant le 20/07.",
+      "historique": [
+        { "date": "2026-06-15", "evenement": "📤 Envoyée" },
+        { "date": "2026-06-24", "evenement": "🗣️ Entretien" },
+        { "date": "2026-07-05", "evenement": "✅ Acceptée" }
+      ]
+    },
+    {
+      "id": "demo-007",
+      "titre": "Alternance Ingénieur DevOps junior (H/F)",
+      "entreprise": "Cloudarium",
+      "lieu": "Lille (hybride)",
+      "lien": "https://example.com/offre/demo-007",
+      "date_publication": "2026-07-07",
+      "date_ajout": "2026-07-08",
+      "domaine": "ingenierie-logicielle",
+      "description_resume": "CI/CD et infrastructure Kubernetes pour une scale-up e-santé, mentorat SRE.",
+      "statut": "nouvelle",
+      "date_candidature": null,
+      "date_relance_prevue": null,
+      "notes": "",
+      "historique": []
+    },
+    {
+      "id": "demo-008",
+      "titre": "Alternance Consultant Cybersécurité GRC (H/F)",
+      "entreprise": "Aegis Conseil",
+      "lieu": "Paris (présentiel)",
+      "lien": "https://example.com/offre/demo-008",
+      "date_publication": "2026-06-18",
+      "date_ajout": "2026-06-20",
+      "domaine": "cybersecurite",
+      "description_resume": "Audits ISO 27001 et analyses de risques chez des clients grands comptes.",
+      "statut": "ecartee",
+      "date_candidature": null,
+      "date_relance_prevue": null,
+      "notes": "",
+      "historique": [
+        { "date": "2026-06-21", "evenement": "✖ Écartée" }
+      ]
+    }
+  ]
+}

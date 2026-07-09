@@ -1,0 +1,12 @@
+{
+  "_description": "Critères factices pour le mode démo.",
+  "domaines": [
+    { "id": "ingenierie-logicielle", "nom": "Ingénierie Logicielle", "postes": ["Développeur Full-Stack", "Ingénieur Logiciel"], "mots_cles": ["alternance développeur full-stack", "alternance ingénieur logiciel"] },
+    { "id": "data-ia", "nom": "Data & IA", "postes": ["Data Analyst", "Data Scientist"], "mots_cles": ["alternance data analyst", "alternance data scientist"] },
+    { "id": "cybersecurite", "nom": "Cybersécurité", "postes": ["Analyste SOC"], "mots_cles": ["alternance cybersécurité"] },
+    { "id": "gestion-projet", "nom": "Gestion de Projet", "postes": ["Assistant Chef de Projet IT"], "mots_cles": ["alternance chef de projet IT"] }
+  ],
+  "localisation": { "zone": "France entière", "teletravail": true, "presentiel": true, "hybride": true },
+  "contrats": ["Alternance", "Contrat d'apprentissage", "Contrat de professionnalisation"],
+  "exclusions": []
+}

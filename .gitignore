@@ -1,0 +1,9 @@
+# Fichiers système / éditeur
+Thumbs.db
+Desktop.ini
+.vscode/
+
+# JAMAIS de données personnelles ni de clés dans ce dépôt PUBLIC.
+# (Les données vivent dans Supabase ; la clé service_role reste en variable d'environnement.)
+*.env
+.env*
