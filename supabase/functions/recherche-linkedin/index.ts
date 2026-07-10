@@ -57,44 +57,68 @@ Deno.serve(async (req) => {
   });
 
   // --- Requêtes vers l'endpoint public LinkedIn ---
-  const { motsCles = [], localisation = "France" } = await req.json().catch(() => ({}));
+  const { motsCles = [], localisation = "France", debug = false } = await req.json().catch(() => ({}));
   const requetes = (Array.isArray(motsCles) ? motsCles : [motsCles])
     .map((m) => String(m).trim()).filter(Boolean).slice(0, MAX_MOTS_CLES);
   if (!requetes.length) return reponse({ erreur: "mots_cles_manquants" }, 400);
 
   const offres = new Map<string, Record<string, string>>();
   let htmlRecu = false;
+  let bloque = false;
+  let diagnostic = "";
 
   for (const mots of requetes) {
     const url = "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search" +
       `?keywords=${encodeURIComponent(mots)}&location=${encodeURIComponent(localisation)}` +
       "&f_TPR=r604800&start=0"; // offres des 7 derniers jours
-    let rep: Response;
-    try {
-      rep = await fetch(url, {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
-          "Accept-Language": "fr-FR,fr;q=0.9",
-        },
-      });
-    } catch {
-      return reponse({ erreur: "linkedin_injoignable" }, 502);
+
+    // LinkedIn est capricieux avec les IP de serveurs : jusqu'à 3 tentatives par mot-clé.
+    for (let essai = 0; essai < 3; essai++) {
+      if (essai) await new Promise((r) => setTimeout(r, 800 * essai));
+      let rep: Response;
+      try {
+        rep = await fetch(url, {
+          redirect: "manual", // une redirection vers /authwall = blocage, pas une erreur de format
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml",
+            "Accept-Language": "fr-FR,fr;q=0.9",
+          },
+        });
+      } catch {
+        diagnostic = "fetch_impossible";
+        continue;
+      }
+      diagnostic = "http_" + rep.status;
+
+      if ([301, 302, 303, 307, 308].includes(rep.status) || rep.status === 429 || rep.status === 999 || rep.status === 403) {
+        bloque = true; // redirection (authwall) ou refus explicite : IP mal vue, on retente
+        await rep.body?.cancel();
+        continue;
+      }
+      if (!rep.ok) { await rep.body?.cancel(); continue; }
+
+      const html = await rep.text();
+      if (/authwall|uas\/login|sign-in|inscription pour voir/i.test(html.slice(0, 4000)) && !html.includes("base-search-card")) {
+        bloque = true; // page de connexion servie avec un statut 200
+        diagnostic = "authwall_200";
+        continue;
+      }
+      htmlRecu = true;
+      if (debug) diagnostic = "html_" + html.length + ":" + html.slice(0, 600).replace(/\s+/g, " ");
+      for (const offre of parserCartes(html)) offres.set(offre.source_ref, offre);
+      break; // tentative réussie pour ce mot-clé
     }
-    if (rep.status === 429 || rep.status === 999 || rep.status === 403) {
-      return reponse({ erreur: "linkedin_bloque", status: rep.status }, 502);
-    }
-    if (!rep.ok) continue;
-    htmlRecu = true;
-    for (const offre of parserCartes(await rep.text())) offres.set(offre.source_ref, offre);
   }
 
-  if (!htmlRecu) return reponse({ erreur: "linkedin_bloque" }, 502);
-  if (offres.size === 0) return reponse({ erreur: "format_change" }, 502);
-
-  return reponse({
-    offres: [...offres.values()],
-    recherches_restantes: MAX_RECHERCHES_JOUR - dejaFaites - 1,
-  });
+  if (offres.size > 0) {
+    return reponse({
+      offres: [...offres.values()],
+      recherches_restantes: MAX_RECHERCHES_JOUR - dejaFaites - 1,
+    });
+  }
+  if (!htmlRecu || bloque) return reponse({ erreur: "linkedin_bloque", diagnostic }, 502);
+  return reponse({ erreur: "format_change", diagnostic: debug ? diagnostic : undefined }, 502);
 });
 
 /* Extraction des cartes d'offres du HTML invité de LinkedIn.
