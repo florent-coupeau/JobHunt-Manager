@@ -6,7 +6,7 @@ import { supabase } from "./supabase.js";
 export const FOURNISSEURS = {
   gemini: {
     nom: "Google Gemini",
-    modele: "gemini-2.5-flash",
+    modele: "gemini-3.5-flash",
     lienCle: "https://aistudio.google.com/apikey",
     infoCle: "Clé gratuite en 1 minute avec un compte Google (bouton « Créer une clé API »).",
   },
@@ -72,26 +72,63 @@ export async function testerCle(fournisseur, cle) {
 /* ---------- Gemini (REST, CORS natif) ---------- */
 
 async function appelGemini(cle, instructions, contenu, formatJSON) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${FOURNISSEURS.gemini.modele}:generateContent?key=${encodeURIComponent(cle)}`;
-  let rep;
-  try {
-    rep = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: instructions }] },
-        contents: [{ role: "user", parts: [{ text: contenu }] }],
-        generationConfig: formatJSON ? { responseMimeType: "application/json" } : {},
-      }),
-    });
-  } catch {
-    throw new Error("Impossible de joindre Gemini — vérifie ta connexion internet.");
+  const modele = localStorage.getItem("modele-gemini") || FOURNISSEURS.gemini.modele;
+  let rep = await requeteGemini(cle, modele, instructions, contenu, formatJSON);
+
+  // Google renomme régulièrement ses modèles : sur un 404, on demande à l'API
+  // quels modèles sont disponibles pour CETTE clé et on retente avec le bon.
+  if (rep.status === 404) {
+    const autre = await decouvrirModeleGemini(cle);
+    if (autre && autre !== modele) {
+      localStorage.setItem("modele-gemini", autre);
+      rep = await requeteGemini(cle, autre, instructions, contenu, formatJSON);
+    }
   }
+
   if (!rep.ok) throw new Error(traduireErreur(rep.status, "Gemini"));
   const donnees = await rep.json();
   const texte = donnees.candidates?.[0]?.content?.parts?.map((p) => p.text || "").join("") || "";
   if (!texte) throw new Error("Gemini a renvoyé une réponse vide — réessaie.");
   return texte;
+}
+
+async function requeteGemini(cle, modele, instructions, contenu, formatJSON) {
+  try {
+    return await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${modele}:generateContent?key=${encodeURIComponent(cle)}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: instructions }] },
+          contents: [{ role: "user", parts: [{ text: contenu }] }],
+          generationConfig: formatJSON ? { responseMimeType: "application/json" } : {},
+        }),
+      }
+    );
+  } catch {
+    throw new Error("Impossible de joindre Gemini — vérifie ta connexion internet.");
+  }
+}
+
+/* Interroge la liste des modèles accessibles avec la clé et choisit le
+   meilleur « flash » (rapide et couvert par le palier gratuit). */
+async function decouvrirModeleGemini(cle) {
+  try {
+    const rep = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(cle)}&pageSize=200`);
+    if (!rep.ok) return null;
+    const { models } = await rep.json();
+    const noms = (models || [])
+      .filter((m) => (m.supportedGenerationMethods || []).includes("generateContent"))
+      .map((m) => m.name.replace(/^models\//, ""));
+    const preferes = ["gemini-3.5-flash", "gemini-flash-latest", "gemini-2.5-flash"];
+    return preferes.find((p) => noms.includes(p))
+      || noms.find((n) => n.includes("flash") && !n.includes("lite") && !n.includes("preview"))
+      || noms.find((n) => n.includes("flash"))
+      || noms[0] || null;
+  } catch {
+    return null;
+  }
 }
 
 /* ---------- Anthropic (SDK officiel, chargé à la demande) ---------- */
