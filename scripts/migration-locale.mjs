@@ -44,8 +44,9 @@ async function api(chemin, options = {}) {
       ...options.headers,
     },
   });
-  if (!rep.ok) throw new Error(`${chemin} → HTTP ${rep.status} : ${await rep.text()}`);
-  return rep.status === 204 ? null : rep.json();
+  const texte = await rep.text();
+  if (!rep.ok) throw new Error(`${chemin} → HTTP ${rep.status} : ${texte}`);
+  return texte ? JSON.parse(texte) : null; // les insertions renvoient un corps vide
 }
 
 /* ---------- 1. Retrouver l'utilisateur par email ---------- */
