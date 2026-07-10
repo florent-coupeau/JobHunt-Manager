@@ -71,25 +71,50 @@ export async function testerCle(fournisseur, cle) {
 
 /* ---------- Gemini (REST, CORS natif) ---------- */
 
-async function appelGemini(cle, instructions, contenu, formatJSON) {
-  const modele = localStorage.getItem("modele-gemini") || FOURNISSEURS.gemini.modele;
-  let rep = await requeteGemini(cle, modele, instructions, contenu, formatJSON);
+/* Modèles essayés dans l'ordre quand le précédent est indisponible ou surchargé. */
+const MODELES_GEMINI = ["gemini-3.5-flash", "gemini-2.5-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash-lite", "gemini-flash-latest"];
+const pause = (ms) => new Promise((r) => setTimeout(r, ms));
 
-  // Google renomme régulièrement ses modèles : sur un 404, on demande à l'API
-  // quels modèles sont disponibles pour CETTE clé et on retente avec le bon.
-  if (rep.status === 404) {
-    const autre = await decouvrirModeleGemini(cle);
-    if (autre && autre !== modele) {
-      localStorage.setItem("modele-gemini", autre);
-      rep = await requeteGemini(cle, autre, instructions, contenu, formatJSON);
+async function appelGemini(cle, instructions, contenu, formatJSON) {
+  const memorise = localStorage.getItem("modele-gemini");
+  const candidats = [...new Set([memorise, ...MODELES_GEMINI].filter(Boolean))];
+  let derniereErreur = 503;
+
+  for (const modele of candidats) {
+    // Surcharge passagère (500/503/529) : on réessaie 2 fois avant de changer de modèle.
+    for (const attente of [0, 1500, 4000]) {
+      if (attente) await pause(attente);
+      const rep = await requeteGemini(cle, modele, instructions, contenu, formatJSON);
+
+      if (rep.ok) {
+        localStorage.setItem("modele-gemini", modele);
+        const donnees = await rep.json();
+        const texte = donnees.candidates?.[0]?.content?.parts?.map((p) => p.text || "").join("") || "";
+        if (!texte) throw new Error("Gemini a renvoyé une réponse vide — réessaie.");
+        return texte;
+      }
+
+      derniereErreur = rep.status;
+      if (rep.status === 404) break; // modèle inconnu pour cette clé : candidat suivant
+      if (![500, 503, 529].includes(rep.status)) throw new Error(traduireErreur(rep.status, "Gemini"));
     }
   }
 
-  if (!rep.ok) throw new Error(traduireErreur(rep.status, "Gemini"));
-  const donnees = await rep.json();
-  const texte = donnees.candidates?.[0]?.content?.parts?.map((p) => p.text || "").join("") || "";
-  if (!texte) throw new Error("Gemini a renvoyé une réponse vide — réessaie.");
-  return texte;
+  // Tous les candidats connus ont échoué : dernier recours, demander la liste à Google.
+  if (derniereErreur === 404) {
+    const autre = await decouvrirModeleGemini(cle);
+    if (autre && !candidats.includes(autre)) {
+      const rep = await requeteGemini(cle, autre, instructions, contenu, formatJSON);
+      if (rep.ok) {
+        localStorage.setItem("modele-gemini", autre);
+        const donnees = await rep.json();
+        const texte = donnees.candidates?.[0]?.content?.parts?.map((p) => p.text || "").join("") || "";
+        if (texte) return texte;
+      }
+      derniereErreur = rep.status;
+    }
+  }
+  throw new Error(traduireErreur(derniereErreur, "Gemini"));
 }
 
 async function requeteGemini(cle, modele, instructions, contenu, formatJSON) {
@@ -165,6 +190,7 @@ function traduireErreur(status, nom) {
     404: `Modèle ${nom} introuvable — l'application a peut-être besoin d'une mise à jour.`,
     429: `Quota ${nom} atteint — attends un peu (ou vérifie ton palier gratuit).`,
     500: `${nom} rencontre un problème — réessaie dans quelques minutes.`,
+    503: `Les serveurs ${nom} sont saturés en ce moment — réessaie dans quelques minutes.`,
     529: `${nom} est surchargé — réessaie dans quelques minutes.`,
   };
   return messages[status] || `Erreur ${nom} (HTTP ${status}) — réessaie.`;
