@@ -485,6 +485,26 @@ a.lien-offre:hover { text-decoration: underline; }
   outline-offset: 1px;
 }
 
+/* ===== Recherche LinkedIn + modale d'avertissement ===== */
+.ligne-recherche { display: flex; gap: 10px; flex-wrap: wrap; }
+.ligne-recherche .champ-critere { width: auto; flex: 1; min-width: 160px; }
+.voile-modale {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+.boite-modale { max-width: 520px; width: 100%; max-height: 85vh; overflow-y: auto; }
+.texte-modale { font-size: 14px; color: var(--ink-2); }
+.texte-modale ul { padding-left: 20px; }
+.texte-modale li { margin: 6px 0; }
+.boite-modale .btn-principal { width: auto; margin-top: 0; padding: 9px 20px; }
+.boite-modale .editeur-boutons { margin-top: 14px; align-items: center; }
+
 /* ===== Mobile ===== */
 @media (max-width: 640px) {
   .topbar { gap: 10px; padding: 10px 14px; }

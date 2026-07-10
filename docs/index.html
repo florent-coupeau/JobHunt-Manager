@@ -52,6 +52,16 @@
 
     <!-- Offres -->
     <section id="tab-offres" class="panel">
+      <div class="card carte-recherche">
+        <h2>🔍 Rechercher des offres sur LinkedIn</h2>
+        <div class="ligne-recherche">
+          <select id="recherche-domaine" class="champ-critere" title="Domaine (mots-clés définis dans 🧭 Critères)"></select>
+          <input type="text" id="recherche-lieu" class="champ-critere" placeholder="Lieu (ex. France, Paris…)">
+          <button id="btn-recherche-linkedin" class="pill pill-action">🔍 Lancer la recherche</button>
+        </div>
+        <p id="recherche-message" class="message-auth" hidden></p>
+      </div>
+
       <div class="filtres">
         <input type="search" id="filtre-texte" placeholder="Rechercher (titre, entreprise, lieu)…">
         <select id="filtre-domaine"><option value="">Tous les domaines</option></select>

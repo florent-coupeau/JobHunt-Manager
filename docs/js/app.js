@@ -9,6 +9,7 @@ import { afficherKanban } from "./vues/kanban.js";
 import { afficherEntreprises } from "./vues/entreprises.js";
 import { afficherCriteres } from "./vues/criteres.js";
 import { afficherParametres } from "./vues/parametres.js";
+import { initRechercheLinkedin, afficherRecherche } from "./linkedin.js";
 
 const etat = {
   userId: null,
@@ -26,6 +27,7 @@ function toutAfficher() {
   afficherEntreprises(etat);
   afficherCriteres(etat);
   afficherParametres(etat);
+  afficherRecherche(etat);
 }
 
 async function rafraichir() {
@@ -78,6 +80,7 @@ async function initialiser() {
   initOnglets();
   initTheme();
   initOffres(etat);
+  initRechercheLinkedin(etat);
   await rafraichir();
 }
 

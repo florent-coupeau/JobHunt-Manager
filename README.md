@@ -22,7 +22,7 @@ Crée ton compte et c'est parti — ou installe ta propre copie en suivant [INST
 |---|---|
 | v3.0 ✅ | Comptes + suivi complet des candidatures |
 | v3.1 ✅ | Connexion de TON assistant IA (clé API Gemini gratuite ou Anthropic Claude) : ajout d'offres et fiches entreprises en collant un texte — la clé reste dans ton navigateur |
-| v3.2 | Recherche automatique d'offres LinkedIn (avec avertissement sur les limites) |
+| v3.2 ✅ | Recherche automatique d'offres LinkedIn (page publique, sans compte — avec avertissement sur les limites, tri par ton IA, 5 recherches/jour) |
 | v3.3 | Master CV + génération d'un CV sur-mesure par offre (PDF) |
 | v3.4 | Statistiques avancées, démo publique, export de données, suppression de compte |
 
