@@ -28,8 +28,8 @@ Ce guide met TON site en ligne. À la fin tu auras :
 
 1. Dans Supabase : **Project Settings** (roue dentée) → **API** (ou *Data API*).
 2. Copie deux valeurs :
-   - **Project URL** (ex. `https://abcdefghij.supabase.co`) ;
-   - la clé **anon / public** (une longue chaîne de caractères).
+   - **Project URL** (ex. `https://abcdefghij.supabase.co`) — ⚠️ l'adresse de BASE, **sans** `/rest/v1/` ni autre chemin derrière ;
+   - la clé **anon / public** (parfois nommée *publishable*, commençant par `sb_publishable_` ou `eyJ…`).
 3. Ouvre le fichier [`docs/js/config.js`](docs/js/config.js) et colle-les entre les guillemets :
 
 ```js

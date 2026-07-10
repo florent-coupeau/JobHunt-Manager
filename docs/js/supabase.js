@@ -5,9 +5,13 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./config.js";
 
 export const configManquante = !SUPABASE_URL || !SUPABASE_ANON_KEY;
 
+/* Tolère une URL collée avec un chemin en trop (ex. "…supabase.co/rest/v1/") :
+   seul "https://xxxx.supabase.co" doit être gardé. */
+const urlPropre = (SUPABASE_URL || "").replace(/\/(rest|auth|realtime|storage)\/v1\/?$/, "").replace(/\/+$/, "");
+
 export const supabase = configManquante
   ? null
-  : createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  : createClient(urlPropre, SUPABASE_ANON_KEY);
 
 /* Si la config est vide, on affiche un message clair au lieu d'un écran cassé. */
 export function verifierConfig() {
