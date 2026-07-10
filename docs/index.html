@@ -21,7 +21,8 @@
       <button class="tab" data-tab="offres">📋 Offres</button>
       <button class="tab" data-tab="pipeline">📌 Pipeline</button>
       <button class="tab" data-tab="entreprises">🏢 Entreprises</button>
-      <button class="tab" data-tab="criteres">⚙️ Critères</button>
+      <button class="tab" data-tab="criteres">🧭 Critères</button>
+      <button class="tab" data-tab="parametres">⚙️ Paramètres</button>
     </nav>
     <div class="topbar-actions">
       <button id="btn-theme" class="pill" title="Basculer clair / sombre">🌓</button>
@@ -68,6 +69,16 @@
       </div>
 
       <div id="zone-ajout-offre" class="card" hidden>
+        <h2>✨ Remplissage automatique (avec ton IA)</h2>
+        <p class="aide-fiches">Sur la page de l'offre (LinkedIn, Indeed, HelloWork…), sélectionne tout le texte
+          (Ctrl+A), copie-le (Ctrl+C) et colle-le ici — l'IA remplit le formulaire pour toi.</p>
+        <textarea id="import-texte" class="editeur-notes" rows="4"
+          placeholder="Colle ici le texte complet de l'annonce…"></textarea>
+        <div class="editeur-boutons">
+          <button type="button" id="btn-analyser-ia" class="btn-mini btn-ok">✨ Analyser avec l'IA</button>
+        </div>
+        <p id="import-message" class="message-auth" hidden></p>
+
         <h2>➕ Nouvelle offre</h2>
         <form id="form-ajout-offre" class="form-ajout">
           <input type="text" id="ajout-titre" placeholder="Intitulé du poste *" required>
@@ -114,6 +125,11 @@
     <!-- Critères -->
     <section id="tab-criteres" class="panel">
       <div id="zone-criteres"></div>
+    </section>
+
+    <!-- Paramètres -->
+    <section id="tab-parametres" class="panel">
+      <div id="zone-parametres"></div>
     </section>
   </main>
 

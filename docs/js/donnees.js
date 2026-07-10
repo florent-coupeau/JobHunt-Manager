@@ -25,10 +25,11 @@ function verifier(reponse, contexte) {
 /* ---------- Chargement global ---------- */
 
 export async function chargerTout(userId) {
-  const [offres, entreprises, criteres] = await Promise.all([
+  const [offres, entreprises, criteres, parametres] = await Promise.all([
     supabase.from("offres").select("*").order("date_ajout", { ascending: false }),
     supabase.from("entreprises").select("*").order("nom"),
     supabase.from("criteres").select("*").maybeSingle(),
+    supabase.from("parametres").select("*").maybeSingle(),
   ]);
   let mesCriteres = verifier(criteres, "Chargement des critères");
   if (!mesCriteres) {
@@ -40,6 +41,7 @@ export async function chargerTout(userId) {
     offres: verifier(offres, "Chargement des offres") || [],
     entreprises: verifier(entreprises, "Chargement des entreprises") || [],
     criteres: mesCriteres,
+    parametres: verifier(parametres, "Chargement des paramètres") || null,
   };
 }
 

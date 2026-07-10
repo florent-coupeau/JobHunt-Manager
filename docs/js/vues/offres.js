@@ -4,6 +4,7 @@
 import { el, boutonMini, formaterDate, pointDomaine, nomDomaine, signalerErreur } from "../ui.js";
 import { STATUTS, patchChangementStatut } from "../statuts.js";
 import { creerOffre, majOffre, supprimerOffre } from "../donnees.js";
+import { appelIA, iaConfiguree } from "../ia.js";
 
 export function afficherOffres(etat) {
   remplirFiltreDomaines(etat);
@@ -151,6 +152,8 @@ function initFormulaireAjout(etat) {
     zone.hidden = true;
   });
 
+  initImportIA(etat);
+
   form.addEventListener("submit", async (ev) => {
     ev.preventDefault();
     const champs = {
@@ -170,6 +173,67 @@ function initFormulaireAjout(etat) {
       await etat.rafraichir();
     } catch (e) {
       signalerErreur(e, "Impossible d'ajouter l'offre.");
+    }
+  });
+}
+
+/* ---------- Import assisté par IA : coller le texte de l'annonce ---------- */
+
+function initImportIA(etat) {
+  const champTexte = document.getElementById("import-texte");
+  const bouton = document.getElementById("btn-analyser-ia");
+  const messageZone = document.getElementById("import-message");
+
+  function message(texte, ok = true) {
+    messageZone.textContent = texte;
+    messageZone.className = "message-auth " + (ok ? "ok" : "erreur");
+    messageZone.hidden = !texte;
+  }
+
+  bouton.addEventListener("click", async () => {
+    if (!iaConfiguree(etat)) {
+      message("Configure d'abord ton IA dans l'onglet ⚙️ Paramètres (clé gratuite en 1 minute).", false);
+      return;
+    }
+    const texte = champTexte.value.trim();
+    if (texte.length < 40) {
+      message("Colle le texte complet de l'annonce (sélectionne tout sur la page de l'offre, copie, colle ici).", false);
+      return;
+    }
+
+    bouton.disabled = true;
+    message("⏳ Analyse de l'annonce en cours…");
+    try {
+      const domaines = (etat.criteres?.domaines || []).map((d) => `"${d.id}" (${d.nom})`).join(", ");
+      const infos = await appelIA(etat, {
+        instructions:
+          "Tu extrais les informations d'une offre d'emploi collée par l'utilisateur. " +
+          "Réponds UNIQUEMENT en JSON avec exactement ces clés : " +
+          '{"titre": string, "entreprise": string, "lieu": string (ville + présentiel/hybride/télétravail si mentionné), ' +
+          '"lien": string (URL de l\'annonce si présente dans le texte, sinon ""), ' +
+          '"description_resume": string (2 phrases max, en français : missions et stack/compétences clés), ' +
+          `"domaine": le plus pertinent parmi [${domaines || "aucun"}] ou "" si aucun ne convient}. ` +
+          "N'invente rien : si une information est absente, mets une chaîne vide.",
+        contenu: texte,
+        formatJSON: true,
+      });
+
+      document.getElementById("ajout-titre").value = infos.titre || "";
+      document.getElementById("ajout-entreprise").value = infos.entreprise || "";
+      document.getElementById("ajout-lieu").value = infos.lieu || "";
+      if (infos.lien && !document.getElementById("ajout-lien").value) {
+        document.getElementById("ajout-lien").value = infos.lien;
+      }
+      document.getElementById("ajout-resume").value = infos.description_resume || "";
+      const selDomaine = document.getElementById("ajout-domaine");
+      if (infos.domaine && [...selDomaine.options].some((o) => o.value === infos.domaine)) {
+        selDomaine.value = infos.domaine;
+      }
+      message("✅ Formulaire rempli — vérifie les champs puis clique 💾 Ajouter.");
+    } catch (e) {
+      message("❌ " + (e.message || "L'analyse a échoué — réessaie."), false);
+    } finally {
+      bouton.disabled = false;
     }
   });
 }

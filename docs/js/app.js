@@ -8,12 +8,14 @@ import { afficherOffres, initOffres } from "./vues/offres.js";
 import { afficherKanban } from "./vues/kanban.js";
 import { afficherEntreprises } from "./vues/entreprises.js";
 import { afficherCriteres } from "./vues/criteres.js";
+import { afficherParametres } from "./vues/parametres.js";
 
 const etat = {
   userId: null,
   offres: [],
   entreprises: [],
   criteres: null,
+  parametres: null,
   rafraichir: null, // rechargé + réaffiché ; utilisé par toutes les vues après une action
 };
 
@@ -23,6 +25,7 @@ function toutAfficher() {
   afficherKanban(etat);
   afficherEntreprises(etat);
   afficherCriteres(etat);
+  afficherParametres(etat);
 }
 
 async function rafraichir() {

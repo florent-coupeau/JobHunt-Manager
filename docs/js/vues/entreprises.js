@@ -3,6 +3,7 @@
 
 import { el, boutonMini, editeurNotes, signalerErreur } from "../ui.js";
 import { creerEntreprise, majEntreprise, supprimerEntreprise } from "../donnees.js";
+import { appelIA, iaConfiguree } from "../ia.js";
 
 export function afficherEntreprises(etat) {
   const cont = document.getElementById("liste-entreprises");
@@ -41,15 +42,22 @@ export function afficherEntreprises(etat) {
     const zoneNote = el("div", "note-ent");
     if (e.notes) zoneNote.textContent = "📝 " + e.notes;
     carte.append(zoneNote);
-    carte.append(boutonMini("✏️ Modifier les notes", "Modifier tes notes sur cette entreprise", () =>
-      editeurNotes(zoneNote, e.notes, async (v) => {
-        try {
-          await majEntreprise(e.id, { notes: v });
-          await etat.rafraichir();
-        } catch (err) {
-          signalerErreur(err, "Impossible d'enregistrer les notes.");
-        }
-      }, () => etat.rafraichir())));
+    const zoneIA = el("div");
+    const actions = el("div", "editeur-boutons");
+    actions.append(
+      boutonMini("✏️ Modifier les notes", "Modifier tes notes sur cette entreprise", () =>
+        editeurNotes(zoneNote, e.notes, async (v) => {
+          try {
+            await majEntreprise(e.id, { notes: v });
+            await etat.rafraichir();
+          } catch (err) {
+            signalerErreur(err, "Impossible d'enregistrer les notes.");
+          }
+        }, () => etat.rafraichir())),
+      boutonMini("✨ Remplir avec l'IA", "Colle un texte sur l'entreprise (page LinkedIn, site, article) — l'IA remplit la fiche",
+        () => editeurFicheIA(etat, e, zoneIA))
+    );
+    carte.append(actions, zoneIA);
     cont.append(carte);
   }
 
@@ -83,4 +91,64 @@ function suggererFichesManquantes(etat) {
     zone.append(liste);
   }
   zone.hidden = zone.childElementCount === 0;
+}
+
+/* Remplissage d'une fiche par IA : l'utilisateur colle un texte librement
+   (page LinkedIn de l'entreprise, page « à propos », article de presse…). */
+function editeurFicheIA(etat, entreprise, zone) {
+  if (!iaConfiguree(etat)) {
+    alert("Configure d'abord ton IA dans l'onglet ⚙️ Paramètres (clé gratuite en 1 minute).");
+    return;
+  }
+  zone.innerHTML = "";
+  zone.append(el("p", "aide-fiches",
+    `Colle ci-dessous un texte sur ${entreprise.nom} (sa page LinkedIn, son site, un article) :`));
+  const champ = document.createElement("textarea");
+  champ.className = "editeur-notes";
+  champ.rows = 5;
+  const ligne = el("div", "editeur-boutons");
+  const ok = el("button", "btn-mini btn-ok", "✨ Analyser");
+  const annuler = el("button", "btn-mini", "Annuler");
+  annuler.addEventListener("click", () => { zone.innerHTML = ""; });
+  ligne.append(ok, annuler);
+  zone.append(champ, ligne);
+  champ.focus();
+
+  ok.addEventListener("click", async () => {
+    const texte = champ.value.trim();
+    if (texte.length < 40) {
+      alert("Colle un texte plus complet (au moins quelques phrases).");
+      return;
+    }
+    ok.disabled = true;
+    ok.textContent = "⏳ Analyse…";
+    try {
+      const infos = await appelIA(etat, {
+        instructions:
+          `Tu remplis la fiche de l'entreprise « ${entreprise.nom} » à partir du texte collé. ` +
+          "Réponds UNIQUEMENT en JSON avec exactement ces clés : " +
+          '{"secteur": string (secteur d\'activité, court), "taille": string (effectifs si mentionnés, sinon ""), ' +
+          '"description": string (2 phrases max, en français), ' +
+          '"posts_recents": array de strings (max 3 actualités/posts mentionnés, [] sinon), ' +
+          '"conseil": string (1 phrase : un conseil pour candidater chez eux d\'après le texte, "" si rien d\'utile)}. ' +
+          "N'invente rien : si une information est absente du texte, mets une chaîne vide.",
+        contenu: texte,
+        formatJSON: true,
+      });
+      const patch = {
+        secteur: infos.secteur || entreprise.secteur || "",
+        taille: infos.taille || entreprise.taille || "",
+        description: infos.description || entreprise.description || "",
+        posts_recents: Array.isArray(infos.posts_recents) && infos.posts_recents.length
+          ? infos.posts_recents : (entreprise.posts_recents || []),
+      };
+      if (infos.conseil && !entreprise.notes) patch.notes = "💡 " + infos.conseil;
+      await majEntreprise(entreprise.id, patch);
+      await etat.rafraichir();
+    } catch (e) {
+      ok.disabled = false;
+      ok.textContent = "✨ Analyser";
+      signalerErreur(e, "L'analyse de la fiche a échoué.");
+    }
+  });
 }
