@@ -7,3 +7,6 @@ Desktop.ini
 # (Les données vivent dans Supabase ; la clé service_role reste en variable d'environnement.)
 *.env
 .env*
+
+node_modules/
+package-lock.json
