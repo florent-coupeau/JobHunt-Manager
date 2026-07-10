@@ -55,17 +55,22 @@ export const SUPABASE_ANON_KEY = "eyJhbGciOi…";
 Tes 59 offres, candidatures et fiches entreprises de la v2 migrent en une commande.
 
 1. Dans Supabase : **Project Settings** → **API Keys** → copie la clé **`service_role`** (⚠️ celle-ci est SECRÈTE : ne la colle jamais dans un fichier du projet).
-2. Ouvre PowerShell dans le dossier `candidatures-app` et lance :
+2. Crée un fichier `scripts/.env` (il restera sur ton ordinateur : git l'ignore) contenant :
+
+```
+SUPABASE_URL=https://abcdefghij.supabase.co
+SUPABASE_SERVICE_ROLE=<la clé service_role>
+COMPTE_EMAIL=ton-email@exemple.fr
+```
+
+   puis, dans PowerShell depuis le dossier `candidatures-app` :
 
 ```powershell
-$env:SUPABASE_URL = "https://abcdefghij.supabase.co"
-$env:SUPABASE_SERVICE_ROLE = "<la clé service_role>"
-$env:COMPTE_EMAIL = "florent.coupeau@gmail.com"
 node scripts/migration-locale.mjs
 ```
 
 3. Le script affiche le bilan (offres migrées, répartition des statuts). Recharge le site : tout est là.
-4. Ferme PowerShell (les clés en mémoire disparaissent avec).
+4. Supprime le fichier `scripts/.env` (la clé secrète n'a plus de raison de traîner).
 
 ## Étape 6 — Mettre le site en ligne (GitHub Pages)
 

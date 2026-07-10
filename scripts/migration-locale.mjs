@@ -12,7 +12,18 @@
 
 import { readFileSync } from "node:fs";
 
-const URL_PROJET = process.env.SUPABASE_URL;
+/* Les variables peuvent aussi être posées dans un fichier .env (à côté de ce
+   script ou à la racine de candidatures-app) — Node ne le lit pas tout seul. */
+for (const env of [new URL(".env", import.meta.url), new URL("../.env", import.meta.url)]) {
+  try {
+    for (const ligne of readFileSync(env, "utf8").split(/\r?\n/)) {
+      const m = ligne.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
+      if (m && !process.env[m[1]]) process.env[m[1]] = m[2].trim().replace(/^["']|["']$/g, "");
+    }
+  } catch { /* pas de .env ici, tant pis */ }
+}
+
+const URL_PROJET = (process.env.SUPABASE_URL || "").replace(/\/(rest|auth)\/v1\/?$/, "").replace(/\/+$/, "");
 const CLE = process.env.SUPABASE_SERVICE_ROLE;
 const EMAIL = process.env.COMPTE_EMAIL;
 if (!URL_PROJET || !CLE || !EMAIL) {
