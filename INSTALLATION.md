@@ -104,7 +104,7 @@ Dans Supabase : **Authentication** → **URL Configuration** →
 La recherche automatique d'offres tourne sur une « Edge Function » de ton projet Supabase. À installer une fois :
 
 1. Dans Supabase : menu de gauche → **Edge Functions** → **Deploy a new function** → *Via Editor* (l'éditeur dans le navigateur).
-2. Nomme la fonction exactement : `recherche-linkedin`
+2. ⚠️ Le champ du nom est **pré-rempli avec un nom aléatoire** (ex. `smart-endpoint`) : efface-le complètement et tape exactement `recherche-linkedin` **avant** de déployer (l'adresse ne peut plus être changée ensuite).
 3. Efface le code d'exemple, et colle à la place **tout** le contenu du fichier
    [`supabase/functions/recherche-linkedin/index.ts`](supabase/functions/recherche-linkedin/index.ts) de ce projet.
 4. Clique **Deploy function**.
