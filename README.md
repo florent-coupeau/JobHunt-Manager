@@ -1,7 +1,10 @@
 # 🎯 Suivi Alternance
 
+**➡️ Utiliser l'application : https://florent-coupeau.github.io/JobHunt-Manager/connexion.html**
+
 Webapp **gratuite et open-source** pour gérer sa recherche d'alternance (ou d'emploi) de bout en bout :
 offres, candidatures, relances, fiches entreprises — le tout depuis n'importe quel appareil.
+Crée ton compte et c'est parti — ou installe ta propre copie en suivant [INSTALLATION.md](INSTALLATION.md).
 
 ## Fonctionnalités (v3.0)
 
