@@ -10,3 +10,6 @@ Desktop.ini
 
 node_modules/
 package-lock.json
+
+# Exception : le modèle d'exemple (sans secret) doit être publié
+!.env.exemple

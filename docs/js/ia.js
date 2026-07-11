@@ -45,15 +45,18 @@ export function iaConfiguree(etat) {
 /* ---------- Appel générique ----------
    instructions : le rôle et le format attendus (système)
    contenu      : le texte à traiter
-   formatJSON   : true → force du JSON et renvoie l'objet parsé */
-export async function appelIA(etat, { instructions, contenu, formatJSON = false }) {
+   formatJSON   : true → force du JSON et renvoie l'objet parsé
+   url          : true → autorise l'IA à ALLER LIRE les pages web citées dans `contenu`
+                  (outil web_fetch d'Anthropic / url_context de Gemini — l'appel part
+                  du navigateur vers le fournisseur IA, jamais par notre backend) */
+export async function appelIA(etat, { instructions, contenu, formatJSON = false, url = false }) {
   const fournisseur = fournisseurActuel(etat);
   const cle = cleIA(fournisseur);
   if (!cle) throw new Error("Aucune clé API — configure ton IA dans l'onglet ⚙️ Paramètres.");
 
   const texte = fournisseur === "anthropic"
-    ? await appelAnthropic(cle, instructions, contenu, formatJSON)
-    : await appelGemini(cle, instructions, contenu, formatJSON);
+    ? await appelAnthropic(cle, instructions, contenu, formatJSON, url)
+    : await appelGemini(cle, instructions, contenu, formatJSON, url);
 
   return formatJSON ? parserJSON(texte) : texte;
 }
@@ -75,7 +78,7 @@ export async function testerCle(fournisseur, cle) {
 const MODELES_GEMINI = ["gemini-3.5-flash", "gemini-2.5-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash-lite", "gemini-flash-latest"];
 const pause = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function appelGemini(cle, instructions, contenu, formatJSON) {
+async function appelGemini(cle, instructions, contenu, formatJSON, url = false) {
   const memorise = localStorage.getItem("modele-gemini");
   const candidats = [...new Set([memorise, ...MODELES_GEMINI].filter(Boolean))];
   let derniereErreur = 503;
@@ -84,7 +87,7 @@ async function appelGemini(cle, instructions, contenu, formatJSON) {
     // Surcharge passagère (500/503/529) : on réessaie 2 fois avant de changer de modèle.
     for (const attente of [0, 1500, 4000]) {
       if (attente) await pause(attente);
-      const rep = await requeteGemini(cle, modele, instructions, contenu, formatJSON);
+      const rep = await requeteGemini(cle, modele, instructions, contenu, formatJSON, url);
 
       if (rep.ok) {
         localStorage.setItem("modele-gemini", modele);
@@ -104,7 +107,7 @@ async function appelGemini(cle, instructions, contenu, formatJSON) {
   if (derniereErreur === 404) {
     const autre = await decouvrirModeleGemini(cle);
     if (autre && !candidats.includes(autre)) {
-      const rep = await requeteGemini(cle, autre, instructions, contenu, formatJSON);
+      const rep = await requeteGemini(cle, autre, instructions, contenu, formatJSON, url);
       if (rep.ok) {
         localStorage.setItem("modele-gemini", autre);
         const donnees = await rep.json();
@@ -117,7 +120,7 @@ async function appelGemini(cle, instructions, contenu, formatJSON) {
   throw new Error(traduireErreur(derniereErreur, "Gemini"));
 }
 
-async function requeteGemini(cle, modele, instructions, contenu, formatJSON) {
+async function requeteGemini(cle, modele, instructions, contenu, formatJSON, url = false) {
   try {
     return await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${modele}:generateContent?key=${encodeURIComponent(cle)}`,
@@ -127,7 +130,11 @@ async function requeteGemini(cle, modele, instructions, contenu, formatJSON) {
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: instructions }] },
           contents: [{ role: "user", parts: [{ text: contenu }] }],
-          generationConfig: formatJSON ? { responseMimeType: "application/json" } : {},
+          // url_context : Gemini va lire lui-même les URLs citées dans le message.
+          ...(url ? { tools: [{ url_context: {} }] } : {}),
+          // responseMimeType JSON + outils : combinaison non garantie → quand on lit le web,
+          // le JSON est demandé par le prompt et parserJSON() fait le tri.
+          generationConfig: formatJSON && !url ? { responseMimeType: "application/json" } : {},
         }),
       }
     );
@@ -158,17 +165,32 @@ async function decouvrirModeleGemini(cle) {
 
 /* ---------- Anthropic (SDK officiel, chargé à la demande) ---------- */
 
-async function appelAnthropic(cle, instructions, contenu, formatJSON) {
+async function appelAnthropic(cle, instructions, contenu, formatJSON, url = false) {
   const { default: Anthropic } = await import("https://esm.sh/@anthropic-ai/sdk");
   const client = new Anthropic({ apiKey: cle, dangerouslyAllowBrowser: true });
+
+  const requete = {
+    model: FOURNISSEURS.anthropic.modele,
+    max_tokens: url ? 8192 : 4096, // lire une page demande plus de place que nos extractions courtes
+    system: instructions + (formatJSON ? "\nRéponds UNIQUEMENT avec un objet JSON valide, sans texte autour ni bloc de code." : ""),
+    messages: [{ role: "user", content: contenu }],
+  };
+  if (url) {
+    // web_fetch : Claude va lire lui-même les URLs citées dans le message.
+    // max_content_tokens borne le coût si la page est très longue.
+    requete.tools = [{ type: "web_fetch_20260209", name: "web_fetch", max_uses: 3, max_content_tokens: 30000 }];
+  }
+
   let message;
   try {
-    message = await client.messages.create({
-      model: FOURNISSEURS.anthropic.modele,
-      max_tokens: 4096, // les extractions demandées sont volontairement courtes
-      system: instructions + (formatJSON ? "\nRéponds UNIQUEMENT avec un objet JSON valide, sans texte autour ni bloc de code." : ""),
-      messages: [{ role: "user", content: contenu }],
-    });
+    message = await client.messages.create(requete);
+    if (message.stop_reason === "pause_turn") {
+      // La lecture web a été mise en pause côté serveur : on relance UNE fois pour la terminer.
+      message = await client.messages.create({
+        ...requete,
+        messages: [...requete.messages, { role: "assistant", content: message.content }],
+      });
+    }
   } catch (e) {
     if (e instanceof Anthropic.AuthenticationError) throw new Error("Clé Anthropic invalide ou révoquée.");
     if (e instanceof Anthropic.RateLimitError) throw new Error("Limite de requêtes Anthropic atteinte — attends une minute.");
@@ -177,6 +199,14 @@ async function appelAnthropic(cle, instructions, contenu, formatJSON) {
     throw e;
   }
   if (message.stop_reason === "refusal") throw new Error("La demande a été refusée par l'IA — reformule le texte.");
+
+  // Lecture web : si TOUTES les tentatives de lecture ont échoué (pas d'exception HTTP :
+  // l'échec arrive dans un bloc résultat avec un error_code), on le dit clairement.
+  const lectures = message.content.filter((b) => b.type === "web_fetch_tool_result");
+  if (lectures.length && lectures.every((b) => Boolean(b.content?.error_code))) {
+    throw new Error("La page n'a pas pu être lue (site qui bloque les robots ou page derrière une connexion) — utilise le collage de texte.");
+  }
+
   return message.content.filter((b) => b.type === "text").map((b) => b.text).join("");
 }
 

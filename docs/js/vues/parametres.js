@@ -1,7 +1,9 @@
-/* Onglet Paramètres : connexion de l'IA de l'utilisateur (fournisseur + clé). */
+/* Onglet Paramètres : connexion de l'IA de l'utilisateur (fournisseur + clé)
+   + gestion des étiquettes personnelles. */
 
 import { el, signalerErreur } from "../ui.js";
 import { FOURNISSEURS, cleIA, definirCleIA, fournisseurActuel, definirFournisseur, testerCle } from "../ia.js";
+import { creerEtiquette, majEtiquette, supprimerEtiquette, PALETTE_ETIQUETTES } from "../donnees.js";
 
 export function afficherParametres(etat) {
   const cont = document.getElementById("zone-parametres");
@@ -63,7 +65,7 @@ export function afficherParametres(etat) {
     "🔒 Ta clé reste dans CE navigateur (elle n'est jamais envoyée dans la base de données). " +
     "Sur un autre appareil, il faudra la saisir à nouveau."));
 
-  cont.append(carte);
+  cont.append(carte, carteEtiquettes(etat));
 
   /* ---------- Comportement ---------- */
 
@@ -116,4 +118,88 @@ export function afficherParametres(etat) {
 
 function libelle(texte) {
   return el("div", "libelle-champ", texte);
+}
+
+/* ---------- Mes étiquettes (tri personnel des offres) ---------- */
+
+function carteEtiquettes(etat) {
+  const carte = el("div", "card");
+  carte.append(el("h2", null, "🏷️ Mes étiquettes"));
+  carte.append(el("p", "aide-fiches",
+    "Tes petites étiquettes personnelles pour trier les offres à ta façon " +
+    "(ex. « Urgent », « À étudier », « Backup »). Elles apparaissent dans la colonne Étiquette de l'onglet 📋 Offres."));
+
+  for (const etiquette of etat.etiquettes || []) {
+    const ligne = el("div", "ligne-etiquette");
+
+    const couleur = document.createElement("input");
+    couleur.type = "color";
+    couleur.value = etiquette.couleur;
+    couleur.title = "Couleur de l'étiquette";
+    couleur.addEventListener("change", async () => {
+      try {
+        await majEtiquette(etiquette.id, { couleur: couleur.value });
+        await etat.rafraichir();
+      } catch (e) {
+        signalerErreur(e, "Impossible de changer la couleur.");
+      }
+    });
+
+    const nom = document.createElement("input");
+    nom.type = "text";
+    nom.className = "champ-critere";
+    nom.value = etiquette.nom;
+    nom.title = "Renommer (Entrée ou clic ailleurs pour valider)";
+    nom.addEventListener("change", async () => {
+      const nouveau = nom.value.trim();
+      if (!nouveau || nouveau === etiquette.nom) { nom.value = etiquette.nom; return; }
+      try {
+        await majEtiquette(etiquette.id, { nom: nouveau });
+        await etat.rafraichir();
+      } catch (e) {
+        nom.value = etiquette.nom;
+        signalerErreur(e, "Impossible de renommer (nom déjà pris ?).");
+      }
+    });
+
+    const btnSupprimer = el("button", "btn-mini", "🗑️");
+    btnSupprimer.title = "Supprimer cette étiquette";
+    btnSupprimer.addEventListener("click", async () => {
+      if (!confirm(`Supprimer l'étiquette « ${etiquette.nom} » ?\n(Les offres ne seront pas supprimées — elles redeviennent « sans étiquette ».)`)) return;
+      try {
+        await supprimerEtiquette(etiquette.id);
+        await etat.rafraichir();
+      } catch (e) {
+        signalerErreur(e, "Impossible de supprimer l'étiquette.");
+      }
+    });
+
+    ligne.append(couleur, nom, btnSupprimer);
+    carte.append(ligne);
+  }
+
+  if (!(etat.etiquettes || []).length) {
+    carte.append(el("p", "vide", "Aucune étiquette pour l'instant."));
+  }
+
+  const btnAjouter = el("button", "btn-mini btn-ok", "➕ Ajouter une étiquette");
+  btnAjouter.addEventListener("click", async () => {
+    const nom = (prompt("Nom de la nouvelle étiquette :") || "").trim();
+    if (!nom) return;
+    try {
+      await creerEtiquette(etat.userId, {
+        nom,
+        couleur: PALETTE_ETIQUETTES[(etat.etiquettes || []).length % PALETTE_ETIQUETTES.length],
+        ordre: (etat.etiquettes || []).length,
+      });
+      await etat.rafraichir();
+    } catch (e) {
+      signalerErreur(e, "Impossible de créer l'étiquette (nom déjà pris ?).");
+    }
+  });
+  const barreAjout = el("div", "editeur-boutons");
+  barreAjout.append(btnAjouter);
+  carte.append(barreAjout);
+
+  return carte;
 }

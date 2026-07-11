@@ -25,11 +25,12 @@ function verifier(reponse, contexte) {
 /* ---------- Chargement global ---------- */
 
 export async function chargerTout(userId) {
-  const [offres, entreprises, criteres, parametres] = await Promise.all([
+  const [offres, entreprises, criteres, parametres, etiquettes] = await Promise.all([
     supabase.from("offres").select("*").order("date_ajout", { ascending: false }),
     supabase.from("entreprises").select("*").order("nom"),
     supabase.from("criteres").select("*").maybeSingle(),
     supabase.from("parametres").select("*").maybeSingle(),
+    supabase.from("etiquettes").select("*").order("ordre").order("nom"),
   ]);
   let mesCriteres = verifier(criteres, "Chargement des critères");
   if (!mesCriteres) {
@@ -37,11 +38,18 @@ export async function chargerTout(userId) {
     mesCriteres = { user_id: userId, ...CRITERES_DEFAUT };
     verifier(await supabase.from("criteres").insert(mesCriteres), "Création des critères");
   }
+  if (etiquettes.error && /etiquettes/.test(etiquettes.error.message)) {
+    throw new Error(
+      "La table des étiquettes n'existe pas encore : exécute la migration " +
+      "supabase/migrations/002_etiquettes.sql dans Supabase (SQL Editor → New query → Run)."
+    );
+  }
   return {
     offres: verifier(offres, "Chargement des offres") || [],
     entreprises: verifier(entreprises, "Chargement des entreprises") || [],
     criteres: mesCriteres,
     parametres: verifier(parametres, "Chargement des paramètres") || null,
+    etiquettes: verifier(etiquettes, "Chargement des étiquettes") || [],
   };
 }
 
@@ -57,6 +65,27 @@ export async function majOffre(id, patch) {
 
 export async function supprimerOffre(id) {
   verifier(await supabase.from("offres").delete().eq("id", id), "Suppression de l'offre");
+}
+
+/* ---------- Étiquettes (tri personnel) ---------- */
+
+/* Couleurs proposées aux nouvelles étiquettes, à tour de rôle. */
+export const PALETTE_ETIQUETTES = ["#e05d5d", "#e0965d", "#d9c04a", "#5db56b", "#4aa8d9", "#7c6ff0", "#c96fd9"];
+
+export async function creerEtiquette(userId, champs) {
+  // .select().single() : on récupère la ligne créée (son id sert à l'affecter aussitôt)
+  return verifier(
+    await supabase.from("etiquettes").insert({ user_id: userId, ...champs }).select().single(),
+    "Création de l'étiquette"
+  );
+}
+
+export async function majEtiquette(id, patch) {
+  verifier(await supabase.from("etiquettes").update(patch).eq("id", id), "Mise à jour de l'étiquette");
+}
+
+export async function supprimerEtiquette(id) {
+  verifier(await supabase.from("etiquettes").delete().eq("id", id), "Suppression de l'étiquette");
 }
 
 /* ---------- Entreprises ---------- */

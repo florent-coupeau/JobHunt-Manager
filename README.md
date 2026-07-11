@@ -23,18 +23,26 @@ Crée ton compte et c'est parti — ou installe ta propre copie en suivant [INST
 | v3.0 ✅ | Comptes + suivi complet des candidatures |
 | v3.1 ✅ | Connexion de TON assistant IA (clé API Gemini gratuite ou Anthropic Claude) : ajout d'offres et fiches entreprises en collant un texte — la clé reste dans ton navigateur |
 | v3.2 ✅ | Recherche automatique d'offres LinkedIn (page publique, sans compte — avec avertissement sur les limites, tri par ton IA, 5 recherches/jour) |
+| v3.5 ✅ | Étiquettes personnalisées (tri libre des offres), ajout d'offre en collant juste le lien (ton IA lit la page, relais public en secours), recherche LinkedIn 100 % côté navigateur (relais public + ton IA en secours) — plus aucune Edge Function |
 | v3.3 | Master CV + génération d'un CV sur-mesure par offre (PDF) |
 | v3.4 | Statistiques avancées, démo publique, export de données, suppression de compte |
 
 ## Stack (100 % gratuite)
 
 - **Frontend** : HTML/CSS/JavaScript sans framework ni build — hébergé sur GitHub Pages.
-- **Backend** : [Supabase](https://supabase.com) free tier (Postgres + Auth + RLS + Edge Functions).
+- **Backend** : [Supabase](https://supabase.com) free tier (Postgres + Auth + RLS) — uniquement la base de données : les lectures de pages web (offres, LinkedIn) passent par ton fournisseur IA, jamais par un serveur à nous.
 - **IA** (à partir de v3.1) : ta propre clé API (Gemini a un palier gratuit) — elle ne quitte jamais ton navigateur.
 
 ## Installation
 
 Voir [INSTALLATION.md](INSTALLATION.md) : ~20 minutes, aucune compétence technique requise.
+
+## 🚀 Mode turbo (optionnel, pour utilisateurs techniques)
+
+La recherche LinkedIn du site lit la page publique — correcte mais limitée. Le
+[compagnon local](compagnon/README.md) tourne sur ton PC avec Claude Code + ton compte
+LinkedIn (serveur MCP) : résultats complets, triés par IA, insérés directement dans ta
+base — visibles sur le site partout, même sur téléphone. Voir [compagnon/README.md](compagnon/README.md).
 
 ## Structure du projet
 
@@ -44,6 +52,7 @@ docs/            → le site (racine GitHub Pages)
   data-demo/     → jeu de données factices (mode démo)
 supabase/
   migrations/    → schéma SQL à coller dans Supabase
+compagnon/       → mode turbo optionnel : recherche LinkedIn via Claude Code + MCP (sur ton PC)
 scripts/         → outils ponctuels (migration de données locales)
 serveur-dev.js   → serveur de test local (lancer-app.bat)
 ```

@@ -23,6 +23,7 @@ Ce guide met TON site en ligne. À la fin tu auras :
 1. Dans le menu de gauche de Supabase : **SQL Editor** → *New query*.
 2. Ouvre le fichier [`supabase/migrations/001_schema.sql`](supabase/migrations/001_schema.sql) de ce projet, copie **tout** son contenu, colle-le dans l'éditeur.
 3. Clique **Run** (en bas à droite). Tu dois voir `Success. No rows returned`.
+4. Recommence avec le fichier [`supabase/migrations/002_etiquettes.sql`](supabase/migrations/002_etiquettes.sql) (les migrations s'exécutent dans l'ordre, une par une).
 
 ## Étape 3 — Relier le site à ta base
 
@@ -99,24 +100,21 @@ Dans Supabase : **Authentication** → **URL Configuration** →
 
 ---
 
-## Étape 8 — Activer la recherche LinkedIn (v3.2, facultatif)
+## Étape 8 — Mise à jour depuis une ancienne installation (avant v3.5)
 
-La recherche automatique d'offres tourne sur une « Edge Function » de ton projet Supabase. À installer une fois :
+Si tu avais déjà installé l'application **avant la v3.5** :
 
-1. Dans Supabase : menu de gauche → **Edge Functions** → **Deploy a new function** → *Via Editor* (l'éditeur dans le navigateur).
-2. ⚠️ Le champ du nom est **pré-rempli avec un nom aléatoire** (ex. `smart-endpoint`) : efface-le complètement et tape exactement `recherche-linkedin` **avant** de déployer (l'adresse ne peut plus être changée ensuite).
-3. Efface le code d'exemple, et colle à la place **tout** le contenu du fichier
-   [`supabase/functions/recherche-linkedin/index.ts`](supabase/functions/recherche-linkedin/index.ts) de ce projet.
-4. Clique **Deploy function**.
-5. Sur le site : onglet 📋 Offres → carte « 🔍 Rechercher des offres sur LinkedIn » → choisis un domaine → **Lancer la recherche**. À la première utilisation, un avertissement s'affiche (méthode non officielle) — lis-le avant d'accepter.
+1. Exécute la migration [`supabase/migrations/002_etiquettes.sql`](supabase/migrations/002_etiquettes.sql) dans le **SQL Editor** (comme à l'étape 2) — sinon le site affichera un message d'erreur au chargement.
+2. L'ancienne « Edge Function » `recherche-linkedin` ne sert plus à rien : tu peux la supprimer dans Supabase → **Edge Functions** (facultatif — elle ne sera simplement plus appelée). Depuis la v3.5, la recherche LinkedIn passe par ton fournisseur IA, directement depuis ton navigateur.
 
-> ℹ️ Cette recherche interroge la page publique de LinkedIn sans compte : ton compte LinkedIn personnel n'est pas utilisé et ne risque rien. En revanche la fonction peut casser si LinkedIn change ses pages — l'import manuel (coller le texte d'une annonce) marche toujours.
+> ℹ️ La recherche LinkedIn interroge la page publique sans compte : ton compte LinkedIn personnel n'est pas utilisé et ne risque rien. La lecture passe d'abord par un relais public gratuit (service tiers — seuls tes mots-clés y transitent), puis par ton IA en secours. LinkedIn peut bloquer ce genre de lecture — l'ajout par lien ou par texte collé marche toujours.
 
 ## En cas de problème
 
 | Symptôme | Cause probable | Solution |
 |---|---|---|
 | « Configuration manquante » | `config.js` pas rempli | Refais l'étape 3 |
+| « La table des étiquettes n'existe pas encore » | Migration `002_etiquettes.sql` pas exécutée | Étape 2 (ou étape 8 si installation ancienne) |
 | Page blanche en double-cliquant `index.html` | Les modules JS exigent `http://` | Utilise `lancer-app.bat` ou l'adresse GitHub Pages |
 | « Email ou mot de passe incorrect » | — | Bouton *Mot de passe oublié* sur la page de connexion |
 | « Confirme d'abord ton email » | Confirmation activée | Ouvre le mail reçu, ou désactive-la (fin de l'étape 4) |

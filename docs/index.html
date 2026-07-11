@@ -75,11 +75,20 @@
           <option value="refusee">❌ Refusée</option>
           <option value="ecartee">✖ Écartée</option>
         </select>
+        <select id="filtre-etiquette"><option value="">Toutes les étiquettes</option></select>
         <button id="btn-ajouter-offre" class="pill pill-action">➕ Ajouter une offre</button>
       </div>
 
       <div id="zone-ajout-offre" class="card" hidden>
-        <h2>✨ Remplissage automatique (avec ton IA)</h2>
+        <h2>🔗 Remplir depuis un lien (avec ton IA)</h2>
+        <p class="aide-fiches">Colle l'adresse de l'offre — l'IA lit la page et remplit le formulaire pour toi.
+          Si le site bloque la lecture (fréquent sur LinkedIn), utilise le collage de texte juste en dessous.</p>
+        <div class="ligne-recherche">
+          <input type="url" id="import-lien" class="champ-critere" placeholder="https://…">
+          <button type="button" id="btn-analyser-lien" class="btn-mini btn-ok">🔗 Remplir depuis le lien</button>
+        </div>
+
+        <h2>✨ Ou : colle le texte de l'annonce</h2>
         <p class="aide-fiches">Sur la page de l'offre (LinkedIn, Indeed, HelloWork…), sélectionne tout le texte
           (Ctrl+A), copie-le (Ctrl+C) et colle-le ici — l'IA remplit le formulaire pour toi.</p>
         <textarea id="import-texte" class="editeur-notes" rows="4"
@@ -107,7 +116,7 @@
       <div class="table-wrap card">
         <table id="table-offres">
           <thead>
-            <tr><th>Offre</th><th>Entreprise</th><th>Lieu</th><th>Domaine</th><th>Publiée</th><th>Statut</th><th></th></tr>
+            <tr><th>Offre</th><th>Entreprise</th><th>Lieu</th><th>Domaine</th><th>Étiquette</th><th>Publiée</th><th>Statut</th><th></th></tr>
           </thead>
           <tbody></tbody>
         </table>

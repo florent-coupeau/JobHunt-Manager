@@ -1,10 +1,16 @@
-/* Recherche automatique d'offres LinkedIn (via l'Edge Function Supabase).
-   Avertissement obligatoire avant la première utilisation — méthode non officielle. */
+/* Recherche automatique d'offres LinkedIn — 100 % côté navigateur, en cascade :
+   1. lecture de l'endpoint public « invité » de LinkedIn via un relais CORS public
+      (lecture-web.js) + parseur maison — gratuit, sans IA ;
+   2. en secours, le FOURNISSEUR IA de l'utilisateur (web_fetch / url_context) lit
+      la page publique de recherche.
+   Rien ne transite par notre backend. Avertissement obligatoire avant la première
+   utilisation — méthode non officielle. */
 
 import { supabase } from "./supabase.js";
 import { el, signalerErreur } from "./ui.js";
 import { creerOffre } from "./donnees.js";
 import { appelIA, iaConfiguree } from "./ia.js";
+import { lireUrlViaProxy } from "./lecture-web.js";
 
 export function initRechercheLinkedin(etat) {
   document.getElementById("btn-recherche-linkedin").addEventListener("click", () => {
@@ -37,13 +43,15 @@ function afficherAvertissement(etat) {
   boite.append(el("h2", null, "⚠️ Avant ta première recherche LinkedIn"));
   const texte = el("div", "texte-modale");
   texte.innerHTML = `
-    <p>Cette fonction interroge la <strong>page publique</strong> de recherche d'offres de LinkedIn,
-    d'une façon <strong>non officielle</strong> (LinkedIn ne fournit pas d'accès gratuit officiel).</p>
+    <p>Cette fonction lit la <strong>page publique</strong> de recherche d'offres de LinkedIn, d'une façon
+    <strong>non officielle</strong> (LinkedIn ne fournit pas d'accès gratuit officiel) : d'abord via un
+    <strong>relais public gratuit</strong> (service tiers — seuls tes mots-clés de recherche y transitent),
+    puis via <strong>ton fournisseur IA</strong> en secours. Rien ne passe par un serveur de l'application.</p>
     <ul>
       <li>⚖️ C'est une <strong>zone grise des conditions d'utilisation</strong> de LinkedIn ;</li>
-      <li>🔌 LinkedIn peut <strong>bloquer ou casser</strong> cette fonction à tout moment, sans préavis ;</li>
+      <li>🔌 LinkedIn peut <strong>bloquer</strong> ce genre de lecture automatique à tout moment, sans préavis ;</li>
       <li>🙅 Aucun compte LinkedIn n'est utilisé — <strong>ton compte personnel ne risque rien</strong> ;</li>
-      <li>📉 Les résultats peuvent être incomplets — l'import manuel (coller le texte d'une annonce) reste la méthode la plus fiable ;</li>
+      <li>📉 Les résultats peuvent être incomplets — l'ajout par lien ou par texte collé reste la méthode la plus fiable ;</li>
       <li>🔢 Limite de <strong>5 recherches par jour</strong> pour rester discret.</li>
     </ul>`;
   boite.append(texte);
@@ -86,6 +94,24 @@ function message(texte, ok = true) {
   zone.hidden = !texte;
 }
 
+const RECHERCHES_MAX_JOUR = 5;
+
+/* Vérifie le quota du jour et l'incrémente. Renvoie le nombre de recherches restantes
+   APRÈS celle-ci, ou -1 si la limite est atteinte. Compteur stocké dans `parametres`
+   (le même que celui qu'utilisait l'ancienne version serveur). */
+async function consommerQuota(etat) {
+  const aujourdhui = new Date().toISOString().slice(0, 10);
+  const memeJour = etat.parametres?.derniere_recherche === aujourdhui;
+  const deja = memeJour ? etat.parametres?.recherches_jour || 0 : 0;
+  if (deja >= RECHERCHES_MAX_JOUR) return -1;
+
+  const { error } = await supabase.from("parametres")
+    .upsert({ user_id: etat.userId, recherches_jour: deja + 1, derniere_recherche: aujourdhui });
+  if (error) throw new Error("Enregistrement du compteur de recherches : " + error.message);
+  etat.parametres = { ...(etat.parametres || {}), recherches_jour: deja + 1, derniere_recherche: aujourdhui };
+  return RECHERCHES_MAX_JOUR - (deja + 1);
+}
+
 async function lancerRecherche(etat) {
   const bouton = document.getElementById("btn-recherche-linkedin");
   const domaineId = document.getElementById("recherche-domaine").value;
@@ -96,42 +122,113 @@ async function lancerRecherche(etat) {
   }
 
   bouton.disabled = true;
-  message("⏳ Interrogation de LinkedIn… (méthode non officielle — peut échouer, l'import manuel reste dispo)");
   try {
-    const { data, error } = await supabase.functions.invoke("recherche-linkedin", {
-      body: {
-        motsCles: domaine.mots_cles.slice(0, 3),
-        localisation: document.getElementById("recherche-lieu").value.trim() || "France",
-      },
-    });
-    if (error) {
-      const detail = await error.context?.json?.().catch(() => null);
-      throw new Error(traduireErreurRecherche(detail?.erreur, error));
+    const restantes = await consommerQuota(etat);
+    if (restantes < 0) {
+      message(`Limite atteinte : ${RECHERCHES_MAX_JOUR} recherches par jour maximum — réessaie demain (ou utilise l'ajout par lien/texte, illimité).`, false);
+      return;
     }
-    if (data?.erreur) throw new Error(traduireErreurRecherche(data.erreur));
 
-    await traiterResultats(etat, domaine, data.offres || [], data.recherches_restantes);
+    const localisation = document.getElementById("recherche-lieu").value.trim() || "France";
+
+    // Voie 1 (principale) : endpoint public « invité » via un relais CORS public,
+    // parsé ici même — gratuit, aucune IA nécessaire pour la lecture.
+    message("⏳ Lecture de LinkedIn via un relais public…");
+    const parRef = new Map();
+    for (const mots of domaine.mots_cles.slice(0, 3)) {
+      const cible = "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search" +
+        `?keywords=${encodeURIComponent(mots)}&location=${encodeURIComponent(localisation)}` +
+        "&f_TPR=r604800&start=0"; // offres des 7 derniers jours
+      try {
+        for (const o of parserCartes(await lireUrlViaProxy(cible))) parRef.set(o.source_ref, o);
+      } catch { /* relais bloqués pour ce mot-clé : on tentera la voie IA */ }
+    }
+    let brutes = [...parRef.values()];
+
+    // Voie 2 (secours) : ton IA lit la page publique de recherche.
+    if (!brutes.length && iaConfiguree(etat)) {
+      message("⏳ Relais publics bloqués — tentative via ton IA…");
+      const url = "https://www.linkedin.com/jobs/search?" +
+        `keywords=${encodeURIComponent(domaine.mots_cles.slice(0, 3).join(" "))}` +
+        `&location=${encodeURIComponent(localisation)}&f_TPR=r604800`;
+      const resultat = await appelIA(etat, {
+        instructions:
+          "Tu lis une page publique de résultats de recherche d'emploi LinkedIn et tu en extrais les offres. " +
+          "Réponds UNIQUEMENT en JSON : " +
+          '{"offres": [{"source_ref": string ("li-" suivi de l\'identifiant numérique présent dans l\'URL de l\'offre), ' +
+          '"titre": string, "entreprise": string, "lieu": string, ' +
+          '"lien": string (URL de l\'offre, format https://www.linkedin.com/jobs/view/<id>/), ' +
+          '"date_publication": string (AAAA-MM-JJ si déductible, sinon "")}]}. ' +
+          "N'invente aucune offre : uniquement celles réellement présentes sur la page. " +
+          'Si la page est illisible, bloquée ou sans offres, réponds {"erreur": "raison courte en français"}.',
+        contenu: "Voici la page de résultats à analyser : " + url,
+        formatJSON: true,
+        url: true,
+      });
+      if (resultat.erreur) throw new Error(resultat.erreur);
+      brutes = resultat.offres || [];
+    }
+
+    if (!brutes.length) {
+      throw new Error("LinkedIn bloque la lecture en ce moment (relais publics" +
+        (iaConfiguree(etat) ? " et IA" : "") + ")");
+    }
+
+    await traiterResultats(etat, domaine, brutes, restantes);
   } catch (e) {
-    message("❌ " + e.message, false);
+    message("❌ " + traduireErreurRecherche(e.message), false);
   } finally {
     bouton.disabled = false;
   }
 }
 
-function traduireErreurRecherche(code, erreurBrute) {
-  const messages = {
-    limite_jour: "Limite atteinte : 5 recherches par jour maximum — réessaie demain (ou utilise l'import manuel, illimité).",
-    linkedin_bloque: "LinkedIn bloque les requêtes en ce moment — réessaie plus tard, ou colle une annonce à la main.",
-    linkedin_injoignable: "LinkedIn est injoignable — réessaie dans quelques minutes.",
-    format_change: "LinkedIn a changé le format de ses pages : la recherche automatique est cassée pour l'instant. Utilise l'import manuel (coller le texte d'une annonce).",
-    non_connecte: "Ta session a expiré — recharge la page et reconnecte-toi.",
-    mots_cles_manquants: "Aucun mot-clé pour ce domaine — complète-le dans l'onglet 🧭 Critères.",
-  };
-  if (code && messages[code]) return messages[code];
-  if (erreurBrute?.message?.includes("Failed to send a request")) {
-    return "La fonction de recherche n'est pas encore installée sur ton projet Supabase (voir INSTALLATION.md, étape 8).";
+function traduireErreurRecherche(texte) {
+  // Les échecs arrivent en texte libre (relais ou IA). On garde le message
+  // d'origine quand il est parlant, avec un rappel du repli fiable.
+  const blocage = /bloq|robot|connexion|authwall|login|relais|lue/i.test(texte || "");
+  if (blocage) {
+    return "LinkedIn bloque la lecture automatique en ce moment — réessaie plus tard, ou utilise l'ajout par lien/texte (fiable et illimité).";
   }
-  return "La recherche a échoué — réessaie, ou utilise l'import manuel.";
+  return (texte || "La recherche a échoué") + " — réessaie, ou utilise l'ajout par lien/texte.";
+}
+
+/* ---------- Parseur du HTML « invité » de LinkedIn ----------
+   (repris tel quel de l'ancienne Edge Function, validé sur du vrai HTML ;
+   si LinkedIn change sa structure, la cascade passe à la voie IA — jamais de crash) */
+
+function parserCartes(html) {
+  const resultats = [];
+  const cartes = html.split(/<li[^>]*>/).slice(1);
+  for (const carte of cartes) {
+    const lien = attraper(carte, /class="base-card__full-link[^"]*"[^>]*href="([^"]+)"/) ||
+                 attraper(carte, /href="(https:\/\/[a-z.]*linkedin\.com\/jobs\/view\/[^"]+)"/);
+    const titre = nettoyer(attraper(carte, /class="base-search-card__title[^"]*"[^>]*>([\s\S]*?)<\//));
+    const entreprise = nettoyer(attraper(carte, /class="base-search-card__subtitle[^"]*"[^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/)) ||
+                       nettoyer(attraper(carte, /class="base-search-card__subtitle[^"]*"[^>]*>([\s\S]*?)<\//));
+    const lieu = nettoyer(attraper(carte, /class="job-search-card__location[^"]*"[^>]*>([\s\S]*?)<\//));
+    const date = attraper(carte, /datetime="(\d{4}-\d{2}-\d{2})"/);
+    const jobId = lien ? attraper(lien, /-(\d{6,})(?:\?|$)/) || attraper(lien, /\/view\/(\d{6,})/) : "";
+    if (!titre || !jobId) continue;
+    resultats.push({
+      source_ref: "li-" + jobId,
+      titre,
+      entreprise: entreprise || "",
+      lieu: lieu || "",
+      lien: "https://www.linkedin.com/jobs/view/" + jobId + "/",
+      date_publication: date || "",
+    });
+  }
+  return resultats;
+}
+
+function attraper(texte, regex) {
+  const m = texte.match(regex);
+  return m ? m[1] : "";
+}
+
+function nettoyer(texte) {
+  return texte.replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/&#39;|&apos;/g, "'")
+    .replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/\s+/g, " ").trim();
 }
 
 /* ---------- Tri IA + insertion ---------- */
@@ -178,7 +275,8 @@ async function traiterResultats(etat, domaine, brutes, restantes) {
       lien: o.lien || "",
       description_resume: o.description_resume || "",
       domaine: domaine.id,
-      date_publication: o.date_publication || null,
+      // On ne garde la date que si elle est bien au format AAAA-MM-JJ (l'IA peut se tromper)
+      date_publication: /^\d{4}-\d{2}-\d{2}$/.test(o.date_publication || "") ? o.date_publication : null,
     });
   }
   await etat.rafraichir();
