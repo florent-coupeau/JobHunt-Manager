@@ -54,6 +54,29 @@ export async function lireUrlViaProxy(url) {
     : "Aucun relais public n'a réussi à lire la page — réessaie dans quelques minutes.");
 }
 
+/* ---------- Lecture orientée TEXTE (pour donner une page à lire à l'IA) ---------- */
+
+/* r.jina.ai : lecteur de pages public et gratuit (sans clé) qui renvoie le TEXTE
+   d'une page en markdown — il lit même les pages que LinkedIn cache derrière son
+   mur de connexion. Plus fiable que les relais HTML ci-dessus, mais comme il
+   renvoie du texte, il ne sert à rien pour parser du HTML (recherche LinkedIn) :
+   on l'utilise quand la page est destinée à être LUE par l'IA. */
+const TIMEOUT_JINA_MS = 45000; // ce lecteur visite vraiment la page : il peut prendre 15-20 s
+
+export async function lireUrlTexte(url, maxCaracteres = 20000) {
+  try {
+    const rep = await fetch("https://r.jina.ai/" + url, { signal: AbortSignal.timeout(TIMEOUT_JINA_MS) });
+    if (rep.ok) {
+      const texte = (await rep.text()).replace(/\s+/g, " ").trim();
+      // Pas de détection de mur de connexion ici : le markdown d'une page valide
+      // contient souvent des liens « sign-in » (faux positif garanti). Si la page
+      // est vraiment bloquée, l'IA le verra dans le texte et répondra { erreur }.
+      if (texte.length >= 200) return texte.slice(0, maxCaracteres);
+    }
+  } catch { /* lecteur indisponible ou trop lent : on tente les relais HTML */ }
+  return htmlEnTexte(await lireUrlViaProxy(url), maxCaracteres);
+}
+
 /* HTML → texte brut lisible par l'IA (balises retirées, entités décodées, longueur bornée). */
 export function htmlEnTexte(html, maxCaracteres = 20000) {
   return html

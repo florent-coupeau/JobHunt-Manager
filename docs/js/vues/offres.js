@@ -5,7 +5,7 @@ import { el, boutonMini, formaterDate, pointDomaine, nomDomaine, signalerErreur 
 import { STATUTS, patchChangementStatut } from "../statuts.js";
 import { creerOffre, majOffre, supprimerOffre, creerEtiquette, PALETTE_ETIQUETTES } from "../donnees.js";
 import { appelIA, iaConfiguree } from "../ia.js";
-import { lireUrlViaProxy, htmlEnTexte } from "../lecture-web.js";
+import { lireUrlTexte } from "../lecture-web.js";
 
 export function afficherOffres(etat) {
   remplirFiltreDomaines(etat);
@@ -315,26 +315,33 @@ function initImportLien(etat) {
     }
 
     bouton.disabled = true;
-    messageImport("⏳ Ton IA lit la page de l'offre… (jusqu'à ~30 secondes)");
+    messageImport("⏳ Lecture de la page de l'offre… (jusqu'à ~45 secondes)");
     try {
-      let infos;
-      try {
-        // Voie 1 : l'IA va lire la page elle-même.
-        infos = await appelIA(etat, {
-          instructions:
-            instructionsExtraction(etat, "à partir de sa page web, que tu dois aller lire") +
-            ' Si la page est illisible ou ne contient pas d\'offre, réponds {"erreur": "raison courte en français"}.',
-          contenu: "Voici l'offre d'emploi à analyser : " + url,
-          formatJSON: true,
-          url: true,
-        });
-        if (infos.erreur) throw new Error(infos.erreur);
-      } catch {
-        // Voie 2 (secours) : le navigateur récupère la page via un relais CORS
-        // public (LinkedIn & co bloquent les lecteurs des IA), puis l'IA analyse le texte.
-        messageImport("⏳ Lecture directe impossible — nouvel essai via un relais public…");
-        const texte = htmlEnTexte(await lireUrlViaProxy(url));
-        if (texte.length < 200) throw new Error("La page récupérée est vide ou illisible");
+      let infos = null;
+
+      // Voie 1 : l'IA va lire la page elle-même. On saute cette voie pour LinkedIn,
+      // qui cache ses pages derrière un mur de connexion : l'IA y échoue toujours.
+      if (!/linkedin\.com/i.test(url)) {
+        try {
+          infos = await appelIA(etat, {
+            instructions:
+              instructionsExtraction(etat, "à partir de sa page web, que tu dois aller lire") +
+              ' Si la page est illisible ou ne contient pas d\'offre, réponds {"erreur": "raison courte en français"}.',
+            contenu: "Voici l'offre d'emploi à analyser : " + url,
+            formatJSON: true,
+            url: true,
+          });
+          if (infos.erreur) throw new Error(infos.erreur);
+        } catch {
+          infos = null; // lecture directe impossible : on passera par un lecteur public
+          messageImport("⏳ Lecture directe impossible — nouvel essai via un lecteur public…");
+        }
+      }
+
+      // Voie 2 : un lecteur public rapporte le TEXTE de la page (r.jina.ai, puis
+      // relais CORS en secours — voir lecture-web.js), et l'IA analyse ce texte.
+      if (!infos) {
+        const texte = await lireUrlTexte(url);
         infos = await appelIA(etat, {
           instructions: instructionsExtraction(etat, "à partir du texte extrait de sa page web"),
           contenu: texte,
