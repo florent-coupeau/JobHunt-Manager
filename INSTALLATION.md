@@ -51,36 +51,14 @@ export const SUPABASE_ANON_KEY = "eyJhbGciOi…";
 > 🔧 Facultatif : pour ne pas avoir de mail de confirmation à chaque inscription,
 > dans Supabase → **Authentication** → **Sign In / Providers** → *Email* → décoche *Confirm email*.
 
-## Étape 5 — (Florent uniquement) Récupérer les données de l'ancien site
-
-Tes 59 offres, candidatures et fiches entreprises de la v2 migrent en une commande.
-
-1. Dans Supabase : **Project Settings** → **API Keys** → copie la clé **`service_role`** (⚠️ celle-ci est SECRÈTE : ne la colle jamais dans un fichier du projet).
-2. Crée un fichier `scripts/.env` (il restera sur ton ordinateur : git l'ignore) contenant :
-
-```
-SUPABASE_URL=https://abcdefghij.supabase.co
-SUPABASE_SERVICE_ROLE=<la clé service_role>
-COMPTE_EMAIL=ton-email@exemple.fr
-```
-
-   puis, dans PowerShell depuis le dossier `candidatures-app` :
-
-```powershell
-node scripts/migration-locale.mjs
-```
-
-3. Le script affiche le bilan (offres migrées, répartition des statuts). Recharge le site : tout est là.
-4. Supprime le fichier `scripts/.env` (la clé secrète n'a plus de raison de traîner).
-
-## Étape 6 — Mettre le site en ligne (GitHub Pages)
+## Étape 5 — Mettre le site en ligne (GitHub Pages)
 
 1. Sur **https://github.com** : *New repository* → nom `suivi-alternance-app`, visibilité **Public**, ne rien cocher d'autre → *Create repository*.
 2. Dans PowerShell, depuis le dossier `candidatures-app` :
 
 ```powershell
 git add -A
-git commit -m "v3.0 — webapp publique"
+git commit -m "Mise en ligne de l'application"
 git remote add origin https://github.com/TON-PSEUDO/suivi-alternance-app.git
 git push -u origin main
 ```
@@ -91,7 +69,7 @@ git push -u origin main
 4. Après 1-2 minutes, ton site est en ligne sur `https://TON-PSEUDO.github.io/suivi-alternance-app/connexion.html` 🎉
 5. Ajoute cette adresse aux favoris de ton téléphone et de ton PC.
 
-## Étape 7 — Dernier réglage de sécurité
+## Étape 6 — Dernier réglage de sécurité
 
 Dans Supabase : **Authentication** → **URL Configuration** →
 - *Site URL* : `https://TON-PSEUDO.github.io/suivi-alternance-app/`
@@ -100,11 +78,11 @@ Dans Supabase : **Authentication** → **URL Configuration** →
 
 ---
 
-## Étape 8 — Mise à jour depuis une ancienne installation (avant v3.5)
+## Étape 7 — Mise à jour depuis une ancienne installation (avant v3.5)
 
 Si tu avais déjà installé l'application **avant la v3.5** :
 
-1. Exécute les migrations [`supabase/migrations/002_etiquettes.sql`](supabase/migrations/002_etiquettes.sql), [`supabase/migrations/003_styles_cv.sql`](supabase/migrations/003_styles_cv.sql) puis [`supabase/migrations/004_suppression_compte.sql`](supabase/migrations/004_suppression_compte.sql) dans le **SQL Editor** (comme à l'étape 2) — sinon le site affichera un message d'erreur au chargement (ou la suppression de compte échouera).
+1. Exécute les migrations manquantes de [`supabase/migrations/`](supabase/migrations/) dans le **SQL Editor** (comme à l'étape 2, dans l'ordre des numéros) — sinon le site affichera un message d'erreur au chargement.
 2. L'ancienne « Edge Function » `recherche-linkedin` ne sert plus à rien : tu peux la supprimer dans Supabase → **Edge Functions** (facultatif — elle ne sera simplement plus appelée). Depuis la v3.5, la recherche LinkedIn passe par ton fournisseur IA, directement depuis ton navigateur.
 
 > ℹ️ La recherche LinkedIn interroge la page publique sans compte : ton compte LinkedIn personnel n'est pas utilisé et ne risque rien. La lecture passe d'abord par un relais public gratuit (service tiers — seuls tes mots-clés y transitent), puis par ton IA en secours. LinkedIn peut bloquer ce genre de lecture — l'ajout par lien ou par texte collé marche toujours.
@@ -114,9 +92,9 @@ Si tu avais déjà installé l'application **avant la v3.5** :
 | Symptôme | Cause probable | Solution |
 |---|---|---|
 | « Configuration manquante » | `config.js` pas rempli | Refais l'étape 3 |
-| « La table des étiquettes n'existe pas encore » | Migration `002_etiquettes.sql` pas exécutée | Étape 2 (ou étape 8 si installation ancienne) |
-| « La table des styles de CV n'existe pas encore » | Migration `003_styles_cv.sql` pas exécutée | Étape 2 (ou étape 8 si installation ancienne) |
+| « La table des étiquettes n'existe pas encore » | Migration `002_etiquettes.sql` pas exécutée | Étape 2 (ou étape 7 si installation ancienne) |
+| « La table des styles de CV n'existe pas encore » | Migration `003_styles_cv.sql` pas exécutée | Étape 2 (ou étape 7 si installation ancienne) |
 | Page blanche en double-cliquant `index.html` | Les modules JS exigent `http://` | Utilise `lancer-app.bat` ou l'adresse GitHub Pages |
 | « Email ou mot de passe incorrect » | — | Bouton *Mot de passe oublié* sur la page de connexion |
 | « Confirme d'abord ton email » | Confirmation activée | Ouvre le mail reçu, ou désactive-la (fin de l'étape 4) |
-| Le site marche mais plus rien après 1 semaine sans l'ouvrir | Pause du projet Supabase (offre gratuite) | Dashboard Supabase → bouton *Restore* (1 clic) — un garde-fou automatique arrive en v3.4 |
+| Le site marche mais plus rien après 1 semaine sans l'ouvrir | Pause du projet Supabase (offre gratuite) | Dashboard Supabase → bouton *Restore* (1 clic) |

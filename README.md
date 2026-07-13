@@ -1,48 +1,56 @@
 # 🎯 Suivi Alternance
 
-**➡️ Utiliser l'application : https://florent-coupeau.github.io/JobHunt-Manager/connexion.html**
+**Pilote ta recherche d'alternance de bout en bout, avec ton assistant IA intégré.**
 
-Webapp **gratuite et open-source** pour gérer sa recherche d'alternance (ou d'emploi) de bout en bout :
-offres, candidatures, relances, fiches entreprises — le tout depuis n'importe quel appareil.
-Crée ton compte et c'est parti — ou installe ta propre copie en suivant [INSTALLATION.md](INSTALLATION.md).
+➡️ **[Utiliser l'application](https://florent-coupeau.github.io/JobHunt-Manager/connexion.html)** · 🔍 **[Essayer la démo](https://florent-coupeau.github.io/JobHunt-Manager/index.html?demo=1)** (sans compte, données factices)
 
-## Fonctionnalités (v3.0)
+Webapp **gratuite et open-source** : offres, candidatures, relances, CV sur-mesure,
+fiches entreprises — le tout depuis n'importe quel appareil, en français, pensée
+pour les non-techniciens.
 
-- **Compte personnel** : tes données te suivent sur PC, téléphone, tablette. Personne d'autre ne peut les voir (sécurité par Row Level Security).
-- **Cycle de candidature simple** : une offre est `🆕 Nouvelle` → `📝 À postuler` → `📤 Envoyée` → `🗣️ Entretien` → `✅ Acceptée` / `❌ Refusée`, ou `✖ Écartée` à tout moment.
-- **Kanban** : fais glisser tes candidatures d'étape en étape.
-- **Relances automatiques J+7** : dès qu'une candidature est envoyée, une relance est programmée 7 jours plus tard et apparaît sur ton tableau de bord.
-- **Fiches entreprises** avec notes personnelles.
-- **Critères de recherche** : tes domaines, postes visés, mots-clés, exclusions.
-- **Thème clair / sombre**, interface en français, pensée pour les non-techniciens.
+## Ce que l'application sait faire
 
-## Feuille de route
+### Suivre tes candidatures
+- **Tableau de bord** avec les actions du jour et les **relances automatiques J+7** : dès qu'une candidature est envoyée, la relance est programmée.
+- **Kanban** en glisser-déposer : `🆕 Nouvelle` → `📝 À postuler` → `📤 Envoyée` → `🗣️ Entretien` → `✅ Acceptée`.
+- **Étiquettes personnalisées**, notes libres, **statistiques** sur toute ta recherche.
 
-| Version | Contenu |
-|---|---|
-| v3.0 ✅ | Comptes + suivi complet des candidatures |
-| v3.1 ✅ | Connexion de TON assistant IA (clé API Gemini gratuite ou Anthropic Claude) : ajout d'offres et fiches entreprises en collant un texte — la clé reste dans ton navigateur |
-| v3.2 ✅ | Recherche automatique d'offres LinkedIn (page publique, sans compte — avec avertissement sur les limites, tri par ton IA, 5 recherches/jour) |
-| v3.5 ✅ | Étiquettes personnalisées (tri libre des offres), ajout d'offre en collant juste le lien (ton IA lit la page, relais public en secours), recherche LinkedIn 100 % côté navigateur (relais public + ton IA en secours) — plus aucune Edge Function |
-| v3.3 | Master CV + génération d'un CV sur-mesure par offre (PDF) |
-| v3.4 | Statistiques avancées, démo publique, export de données, suppression de compte |
+### Trouver et capturer les offres
+- **Recherche LinkedIn intégrée**, 100 % depuis ton navigateur — ton compte LinkedIn n'est jamais utilisé.
+- **Ajout d'une offre en collant son lien** (ou le texte de l'annonce) : ton IA lit la page et remplit la fiche toute seule.
+- **Fiches entreprises** rédigées par l'IA, enrichies de tes notes personnelles.
 
-## Stack (100 % gratuite)
+### Postuler mieux
+- **Master CV** : ton parcours complet, saisi une seule fois.
+- **Génération d'un CV sur-mesure par offre** (PDF), avec des styles personnalisables.
 
-- **Frontend** : HTML/CSS/JavaScript sans framework ni build — hébergé sur GitHub Pages.
-- **Backend** : [Supabase](https://supabase.com) free tier (Postgres + Auth + RLS) — uniquement la base de données : les lectures de pages web (offres, LinkedIn) passent par ton fournisseur IA, jamais par un serveur à nous.
-- **IA** (à partir de v3.1) : ta propre clé API (Gemini a un palier gratuit) — elle ne quitte jamais ton navigateur.
+### Tes données restent à toi
+- **Compte personnel multi-appareils** : PC, téléphone, tablette — et personne d'autre ne voit tes données (Row Level Security).
+- **Ta clé IA** (Gemini, palier gratuit, ou Anthropic Claude) **ne quitte jamais ton navigateur**.
+- **Export complet** de tes données et **suppression de compte** en un clic.
+- Thème clair / sombre, interface entièrement en français.
 
-## Installation
+## Comment c'est construit
 
-Voir [INSTALLATION.md](INSTALLATION.md) : ~20 minutes, aucune compétence technique requise.
+Architecture **100 % côté client** — il n'existe aucun serveur applicatif :
+
+- **Frontend** : HTML / CSS / JavaScript vanilla (modules ES), sans framework ni build, hébergé sur **GitHub Pages**.
+- **Base de données** : **Supabase** free tier (Postgres + Auth + Row Level Security).
+- **IA** : la clé API de chaque utilisateur, stockée dans son navigateur. Les lectures de pages web (offres, LinkedIn) passent par son fournisseur IA ou un relais public — jamais par un serveur à nous.
+
+Budget de fonctionnement : **0 €**.
 
 ## 🚀 Mode turbo (optionnel, pour utilisateurs techniques)
 
 La recherche LinkedIn du site lit la page publique — correcte mais limitée. Le
 [compagnon local](compagnon/README.md) tourne sur ton PC avec Claude Code + ton compte
 LinkedIn (serveur MCP) : résultats complets, triés par IA, insérés directement dans ta
-base — visibles sur le site partout, même sur téléphone. Voir [compagnon/README.md](compagnon/README.md).
+base — visibles sur le site partout, même sur téléphone.
+
+## Héberger ta propre instance
+
+Créer un compte sur [l'application](https://florent-coupeau.github.io/JobHunt-Manager/connexion.html) suffit pour l'utiliser.
+Si tu préfères ta propre copie (ton Supabase, ton GitHub Pages), suis [INSTALLATION.md](INSTALLATION.md).
 
 ## Structure du projet
 
@@ -53,10 +61,9 @@ docs/            → le site (racine GitHub Pages)
 supabase/
   migrations/    → schéma SQL à coller dans Supabase
 compagnon/       → mode turbo optionnel : recherche LinkedIn via Claude Code + MCP (sur ton PC)
-scripts/         → outils ponctuels (migration de données locales)
 serveur-dev.js   → serveur de test local (lancer-app.bat)
 ```
 
 ---
 
-Projet étudiant, budget 0 €, construit avec [Claude Code](https://claude.com/claude-code).
+Projet étudiant, budget 0 €, conçu et développé avec [Claude Code](https://claude.com/claude-code).
