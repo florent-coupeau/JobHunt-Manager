@@ -31,6 +31,11 @@
     </div>
   </header>
 
+  <p id="bandeau-demo" class="bandeau-demo" hidden>
+    🔍 Mode démo — données factices, lecture seule.
+    <a href="connexion.html">Créer mon compte gratuit ↗</a>
+  </p>
+
   <main id="app" hidden>
     <!-- Tableau de bord -->
     <section id="tab-dashboard" class="panel active">
@@ -43,6 +48,16 @@
         <div class="card">
           <h2>🧭 Répartition par domaine</h2>
           <div id="repartition-domaines"></div>
+        </div>
+      </div>
+      <div class="dash-grid">
+        <div class="card">
+          <h2>🎯 Pertinence de la recherche</h2>
+          <div id="pertinence"></div>
+        </div>
+        <div class="card">
+          <h2>🚦 Entonnoir des candidatures</h2>
+          <div id="entonnoir"></div>
         </div>
       </div>
       <div class="card">
@@ -165,7 +180,7 @@
   </div>
 
   <footer class="pied">
-    Tes données sont privées — seul ton compte peut les voir.<br>
+    Tes données sont privées — seul ton compte peut les voir. <a href="confidentialite.html" class="lien-discret">Confidentialité</a><br>
     <span class="pied-credit">Suivi Alternance · projet open-source gratuit, construit avec Claude Code</span>
   </footer>
 

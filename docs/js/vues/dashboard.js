@@ -1,12 +1,14 @@
 /* Tableau de bord : compteurs, relances dues, répartition, dernières offres. */
 
 import { el, formaterDate, pointDomaine, nomDomaine, couleurDomaine } from "../ui.js";
-import { STATUTS_ACTIFS, relanceDue } from "../statuts.js";
+import { STATUTS_ACTIFS, infosStatut, relanceDue } from "../statuts.js";
 
 export function afficherDashboard(etat) {
   afficherKPI(etat);
   afficherRelances(etat);
   afficherRepartition(etat);
+  afficherPertinence(etat);
+  afficherEntonnoir(etat);
   afficherDernieresOffres(etat);
 }
 
@@ -64,6 +66,55 @@ function afficherRepartition(etat) {
     rempli.style.background = couleurDomaine(etat, d.id);
     jauge.append(rempli);
     ligne.append(pointDomaine(etat, d.id), el("span", null, nomDomaine(etat, d.id)), jauge, el("span", "compte", String(n)));
+    cont.append(ligne);
+  }
+}
+
+/* % de pertinence : parmi les offres déjà triées (tout sauf "nouvelle", pas encore vues),
+   quelle proportion a été gardée (a_postuler et au-delà) plutôt qu'écartée. Mesure si la
+   recherche/les critères ciblent bien. */
+function afficherPertinence(etat) {
+  const cont = document.getElementById("pertinence");
+  cont.innerHTML = "";
+  const gardees = etat.offres.filter((o) => !["nouvelle", "ecartee"].includes(o.statut)).length;
+  const ecartees = etat.offres.filter((o) => o.statut === "ecartee").length;
+  const total = gardees + ecartees;
+  if (!total) {
+    cont.append(el("p", "vide", "Trie quelques offres (📝 À postuler ou ✖ Écarter) pour voir apparaître ta pertinence."));
+    return;
+  }
+  const pourcentage = Math.round((gardees / total) * 100);
+  cont.append(el("div", "gros-chiffre", pourcentage + "%"));
+  cont.append(el("p", "aide-fiches", `${gardees} gardée(s) sur ${total} triée(s) (${ecartees} écartée(s)).`));
+}
+
+/* Entonnoir : pour chaque étape du cycle, combien d'offres l'ont atteinte au moins une fois
+   (via l'historique, pas juste le statut actuel — une offre entretien→refusée reste comptée
+   dans "Entretien"). */
+const ETAPES_ENTONNOIR = ["a_postuler", "envoyee", "entretien", "acceptee"];
+
+function afficherEntonnoir(etat) {
+  const cont = document.getElementById("entonnoir");
+  cont.innerHTML = "";
+  const compteurs = ETAPES_ENTONNOIR.map((id) => {
+    const s = infosStatut(id);
+    const evenement = `${s.icone} ${s.label}`;
+    const n = etat.offres.filter((o) => (o.historique || []).some((h) => h.evenement === evenement)).length;
+    return { s, n };
+  });
+  const max = Math.max(1, ...compteurs.map((c) => c.n));
+  if (!compteurs.some((c) => c.n)) {
+    cont.append(el("p", "vide", "Aucune candidature envoyée pour l'instant."));
+    return;
+  }
+  for (const { s, n } of compteurs) {
+    const ligne = el("div", "ligne-domaine");
+    const jauge = el("div", "jauge");
+    const rempli = el("div");
+    rempli.style.width = (n / max) * 100 + "%";
+    rempli.style.background = "var(--dom-1)";
+    jauge.append(rempli);
+    ligne.append(el("span", null, `${s.icone} ${s.label}`), jauge, el("span", "compte", String(n)));
     cont.append(ligne);
   }
 }

@@ -1,0 +1,25 @@
+name: Anti-pause Supabase
+
+# Le palier gratuit de Supabase met le projet en pause après 7 jours sans
+# activité. Ce workflow lui envoie juste un ping en lecture (aucune donnée
+# lue ni modifiée) deux fois par semaine pour éviter la pause.
+# La clé "anon" est publique par conception (déjà visible dans docs/js/config.js
+# et protégée par RLS) — pas besoin de secret GitHub.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1,4" # lundi et jeudi, 6h UTC
+  workflow_dispatch: # déclenchement manuel possible depuis l'onglet Actions
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ping Supabase
+        # Lit l'URL et la clé anon directement dans docs/js/config.js (déjà publiques,
+        # committées) — chaque copie du projet ping SON PROPRE projet Supabase.
+        run: |
+          URL=$(grep -oP 'SUPABASE_URL\s*=\s*"\K[^"]+' docs/js/config.js)
+          CLE=$(grep -oP 'SUPABASE_ANON_KEY\s*=\s*"\K[^"]+' docs/js/config.js)
+          curl -sf "$URL/rest/v1/" -H "apikey: $CLE" -o /dev/null -w "Réponse Supabase : %{http_code}\n"

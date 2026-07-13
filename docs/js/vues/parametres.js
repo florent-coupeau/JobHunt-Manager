@@ -3,7 +3,8 @@
 
 import { el, signalerErreur } from "../ui.js";
 import { FOURNISSEURS, cleIA, definirCleIA, fournisseurActuel, definirFournisseur, testerCle } from "../ia.js";
-import { creerEtiquette, majEtiquette, supprimerEtiquette, PALETTE_ETIQUETTES } from "../donnees.js";
+import { creerEtiquette, majEtiquette, supprimerEtiquette, PALETTE_ETIQUETTES, supprimerMonCompte } from "../donnees.js";
+import { deconnexion } from "../auth.js";
 
 export function afficherParametres(etat) {
   const cont = document.getElementById("zone-parametres");
@@ -65,7 +66,7 @@ export function afficherParametres(etat) {
     "🔒 Ta clé reste dans CE navigateur (elle n'est jamais envoyée dans la base de données). " +
     "Sur un autre appareil, il faudra la saisir à nouveau."));
 
-  cont.append(carte, carteEtiquettes(etat));
+  cont.append(carte, carteEtiquettes(etat), carteExport(etat), carteDangereuse(etat));
 
   /* ---------- Comportement ---------- */
 
@@ -201,5 +202,76 @@ function carteEtiquettes(etat) {
   barreAjout.append(btnAjouter);
   carte.append(barreAjout);
 
+  return carte;
+}
+
+/* ---------- Export de mes données ---------- */
+
+function carteExport(etat) {
+  const carte = el("div", "card");
+  carte.append(el("h2", null, "📤 Exporter mes données"));
+  carte.append(el("p", "aide-fiches",
+    "Télécharge toutes tes données (offres, fiches entreprises, critères, CV maître, styles de CV, " +
+    "étiquettes) dans un seul fichier JSON — une sauvegarde, ou pour les emporter ailleurs."));
+
+  const bouton = el("button", "btn-mini btn-ok", "📤 Télécharger mes données (.json)");
+  bouton.addEventListener("click", () => {
+    const donnees = {
+      exporte_le: new Date().toISOString(),
+      offres: etat.offres,
+      entreprises: etat.entreprises,
+      criteres: etat.criteres,
+      masterCV: etat.masterCV,
+      stylesCV: etat.stylesCV,
+      etiquettes: etat.etiquettes,
+    };
+    const blob = new Blob([JSON.stringify(donnees, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const lien = document.createElement("a");
+    lien.href = url;
+    lien.download = "suivi-alternance-" + new Date().toISOString().slice(0, 10) + ".json";
+    lien.click();
+    URL.revokeObjectURL(url);
+  });
+  const barre = el("div", "editeur-boutons");
+  barre.append(bouton);
+  carte.append(barre);
+
+  return carte;
+}
+
+/* ---------- Zone dangereuse : suppression du compte ---------- */
+
+function carteDangereuse(etat) {
+  const carte = el("div", "card carte-danger");
+  carte.append(el("h2", null, "🗑️ Zone dangereuse"));
+  carte.append(el("p", "aide-fiches",
+    "Supprime définitivement ton compte : toutes tes offres, fiches entreprises, CV et styles " +
+    "seront perdus pour toujours. Cette action est irréversible."));
+
+  const champ = document.createElement("input");
+  champ.type = "text";
+  champ.className = "champ-critere";
+  champ.placeholder = "Tape SUPPRIMER pour confirmer";
+
+  const bouton = el("button", "btn-mini btn-danger", "🗑️ Supprimer définitivement mon compte");
+  bouton.disabled = true;
+  champ.addEventListener("input", () => { bouton.disabled = champ.value.trim() !== "SUPPRIMER"; });
+
+  bouton.addEventListener("click", async () => {
+    if (!confirm("Dernière confirmation : ton compte et TOUTES tes données seront supprimés définitivement. Continuer ?")) return;
+    bouton.disabled = true;
+    try {
+      await supprimerMonCompte();
+    } catch (e) {
+      bouton.disabled = false;
+      signalerErreur(e, "Impossible de supprimer le compte.");
+      return;
+    }
+    // Le compte n'existe plus : on force la redirection même si la déconnexion elle-même échoue.
+    try { await deconnexion(); } catch { location.href = "connexion.html"; }
+  });
+
+  carte.append(champ, bouton);
   return carte;
 }

@@ -23,7 +23,7 @@ Ce guide met TON site en ligne. À la fin tu auras :
 1. Dans le menu de gauche de Supabase : **SQL Editor** → *New query*.
 2. Ouvre le fichier [`supabase/migrations/001_schema.sql`](supabase/migrations/001_schema.sql) de ce projet, copie **tout** son contenu, colle-le dans l'éditeur.
 3. Clique **Run** (en bas à droite). Tu dois voir `Success. No rows returned`.
-4. Recommence avec les fichiers [`supabase/migrations/002_etiquettes.sql`](supabase/migrations/002_etiquettes.sql) puis [`supabase/migrations/003_styles_cv.sql`](supabase/migrations/003_styles_cv.sql) (les migrations s'exécutent dans l'ordre, une par une).
+4. Recommence avec les fichiers [`supabase/migrations/002_etiquettes.sql`](supabase/migrations/002_etiquettes.sql), [`supabase/migrations/003_styles_cv.sql`](supabase/migrations/003_styles_cv.sql) puis [`supabase/migrations/004_suppression_compte.sql`](supabase/migrations/004_suppression_compte.sql) (les migrations s'exécutent dans l'ordre, une par une).
 
 ## Étape 3 — Relier le site à ta base
 
@@ -104,7 +104,7 @@ Dans Supabase : **Authentication** → **URL Configuration** →
 
 Si tu avais déjà installé l'application **avant la v3.5** :
 
-1. Exécute les migrations [`supabase/migrations/002_etiquettes.sql`](supabase/migrations/002_etiquettes.sql) puis [`supabase/migrations/003_styles_cv.sql`](supabase/migrations/003_styles_cv.sql) dans le **SQL Editor** (comme à l'étape 2) — sinon le site affichera un message d'erreur au chargement.
+1. Exécute les migrations [`supabase/migrations/002_etiquettes.sql`](supabase/migrations/002_etiquettes.sql), [`supabase/migrations/003_styles_cv.sql`](supabase/migrations/003_styles_cv.sql) puis [`supabase/migrations/004_suppression_compte.sql`](supabase/migrations/004_suppression_compte.sql) dans le **SQL Editor** (comme à l'étape 2) — sinon le site affichera un message d'erreur au chargement (ou la suppression de compte échouera).
 2. L'ancienne « Edge Function » `recherche-linkedin` ne sert plus à rien : tu peux la supprimer dans Supabase → **Edge Functions** (facultatif — elle ne sera simplement plus appelée). Depuis la v3.5, la recherche LinkedIn passe par ton fournisseur IA, directement depuis ton navigateur.
 
 > ℹ️ La recherche LinkedIn interroge la page publique sans compte : ton compte LinkedIn personnel n'est pas utilisé et ne risque rien. La lecture passe d'abord par un relais public gratuit (service tiers — seuls tes mots-clés y transitent), puis par ton IA en secours. LinkedIn peut bloquer ce genre de lecture — l'ajout par lien ou par texte collé marche toujours.

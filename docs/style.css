@@ -633,10 +633,43 @@ a.lien-offre:hover { text-decoration: underline; }
   .cv-page[contenteditable="true"]:focus { outline: none; }
 }
 
+/* ===== Statistiques avancées (dashboard) ===== */
+.gros-chiffre { font-size: 40px; font-weight: 700; line-height: 1; margin-bottom: 6px; }
+
+/* ===== Bannière mode démo ===== */
+.bandeau-demo {
+  margin: 0;
+  padding: 10px 24px;
+  background: var(--dom-1);
+  color: #fff;
+  text-align: center;
+  font-size: 13.5px;
+}
+.bandeau-demo a { color: #fff; font-weight: 600; text-decoration: underline; }
+
+/* ===== Zone dangereuse (suppression de compte) ===== */
+.carte-danger { border-color: var(--critical); }
+.carte-danger h2 { color: var(--critical); }
+.carte-danger .champ-critere { max-width: 260px; display: inline-block; margin-right: 8px; }
+.btn-danger {
+  border-color: var(--critical);
+  color: var(--critical);
+}
+.btn-danger:hover:not(:disabled) { background: var(--critical); color: #fff; }
+
+/* ===== Page confidentialité ===== */
+.carte-confidentialite { max-width: 640px; text-align: left; }
+.carte-confidentialite h2 { font-size: 15px; margin: 20px 0 6px; }
+.carte-confidentialite p, .carte-confidentialite li { font-size: 13.5px; color: var(--ink-2); }
+.carte-confidentialite ul { padding-left: 20px; }
+
 /* ===== Mobile ===== */
 @media (max-width: 640px) {
   .topbar { gap: 10px; padding: 10px 14px; }
   main { padding: 14px; }
   .form-ajout { grid-template-columns: 1fr; }
   .kanban { grid-auto-columns: minmax(200px, 80vw); }
+  .boite-cv { max-width: 100%; }
+  .cv-page { padding: 14px 16px; font-size: 12px; }
+  .carte-danger .champ-critere { max-width: none; display: block; margin: 0 0 8px; }
 }

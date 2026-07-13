@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confidentialité — Suivi Alternance</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎯</text></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="page-auth">
+    <div class="card carte-auth carte-confidentialite">
+      <div class="brand brand-auth">
+        <span class="brand-icon">🎯</span>
+        <div>
+          <h1>Suivi Alternance</h1>
+          <p class="brand-sub">Confidentialité et données personnelles</p>
+        </div>
+      </div>
+
+      <h2>Ce qui est stocké</h2>
+      <p>Ton compte (email, mot de passe géré par Supabase) et les données que tu saisis toi-même :
+        offres, fiches entreprises, critères de recherche, CV maître, styles de CV, étiquettes. Tout
+        est hébergé chez <a href="https://supabase.com" target="_blank" rel="noopener noreferrer">Supabase</a>
+        (palier gratuit), protégé par des règles de sécurité (Row Level Security) : personne d'autre que
+        toi ne peut lire ou modifier tes données, même les autres utilisateurs de l'application.</p>
+
+      <h2>Ta clé IA (Gemini / Anthropic)</h2>
+      <p>Si tu connectes ton assistant IA, sa clé API reste <strong>uniquement dans ton navigateur</strong>
+        (stockage local) — elle n'est <strong>jamais</strong> envoyée à notre base de données. Les appels à
+        l'IA partent directement de ton navigateur vers Google ou Anthropic, jamais via un serveur à nous.</p>
+
+      <h2>Lecture de pages web (offres, LinkedIn)</h2>
+      <p>Ajouter une offre par lien ou chercher des offres LinkedIn peut passer par ton fournisseur IA
+        (qui va lire la page) ou par un relais public tiers gratuit (uniquement le texte de la recherche
+        y transite, jamais tes données personnelles). Aucun serveur à nous n'est impliqué dans cette
+        lecture — voir le code source pour le détail exact.</p>
+
+      <h2>Tes droits</h2>
+      <p>Depuis l'onglet ⚙️ Paramètres, une fois connecté :</p>
+      <ul>
+        <li><strong>Exporter</strong> toutes tes données en un clic (fichier JSON).</li>
+        <li><strong>Supprimer définitivement</strong> ton compte et toutes tes données, à tout moment,
+          sans avoir à nous contacter.</li>
+      </ul>
+
+      <h2>Mode démo</h2>
+      <p>La démo publique (accessible sans compte) affiche des données 100 % factices — aucune entreprise
+        réelle, aucune donnée personnelle. Rien n'y est jamais enregistré.</p>
+
+      <h2>Contact</h2>
+      <p>Projet étudiant open-source, gratuit, sans publicité ni revente de données. Le code source est
+        public — n'importe qui peut vérifier ce qui est fait de tes données.</p>
+
+      <div class="liens-auth">
+        <a href="connexion.html" class="lien-discret">← Retour à la connexion</a>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

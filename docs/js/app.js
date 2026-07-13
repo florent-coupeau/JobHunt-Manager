@@ -2,7 +2,7 @@
 
 import { verifierConfig } from "./supabase.js";
 import { exigerConnexion, deconnexion } from "./auth.js";
-import { chargerTout } from "./donnees.js";
+import { chargerTout, chargerDemo, activerModeDemo } from "./donnees.js";
 import { afficherDashboard } from "./vues/dashboard.js";
 import { afficherOffres, initOffres } from "./vues/offres.js";
 import { afficherKanban } from "./vues/kanban.js";
@@ -14,6 +14,7 @@ import { initRechercheLinkedin, afficherRecherche } from "./linkedin.js";
 
 const etat = {
   userId: null,
+  demo: false, // mode démo public : données factices, écritures bloquées (voir donnees.js)
   offres: [],
   entreprises: [],
   criteres: null,
@@ -35,7 +36,7 @@ function toutAfficher() {
 
 async function rafraichir() {
   try {
-    Object.assign(etat, await chargerTout(etat.userId));
+    Object.assign(etat, await (etat.demo ? chargerDemo() : chargerTout(etat.userId)));
     document.getElementById("app").hidden = false;
     document.getElementById("erreur-chargement").hidden = true;
     toutAfficher();
@@ -73,12 +74,23 @@ function initTheme() {
 
 async function initialiser() {
   if (!verifierConfig()) return;
-  const session = await exigerConnexion();
-  if (!session) return;
 
-  etat.userId = session.user.id;
-  document.getElementById("email-utilisateur").textContent = session.user.email;
-  document.getElementById("btn-deconnexion").addEventListener("click", deconnexion);
+  const enDemo = new URLSearchParams(location.search).get("demo");
+  if (enDemo) {
+    etat.demo = true;
+    activerModeDemo();
+    document.getElementById("email-utilisateur").textContent = "Mode démo";
+    document.getElementById("bandeau-demo").hidden = false;
+    const btnQuitter = document.getElementById("btn-deconnexion");
+    btnQuitter.textContent = "Quitter la démo";
+    btnQuitter.addEventListener("click", () => { location.href = "connexion.html"; });
+  } else {
+    const session = await exigerConnexion();
+    if (!session) return;
+    etat.userId = session.user.id;
+    document.getElementById("email-utilisateur").textContent = session.user.email;
+    document.getElementById("btn-deconnexion").addEventListener("click", deconnexion);
+  }
 
   initOnglets();
   initTheme();
