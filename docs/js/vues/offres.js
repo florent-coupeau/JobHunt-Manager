@@ -160,28 +160,10 @@ function remplirTable(etat) {
     sel.addEventListener("change", () => changerStatut(etat, o, sel.value));
     tdStatut.append(sel);
 
+    // Actions empilées verticalement : 🗑️ puis 🎯 CV puis Voir ↗ (le changement
+    // de statut « à postuler » / « écartée » se fait via le menu Statut à gauche).
     const tdActions = document.createElement("td");
     tdActions.className = "cellule-actions";
-    if (o.lien) {
-      const a = el("a", "lien-offre", "Voir ↗");
-      a.href = o.lien;
-      a.target = "_blank";
-      a.rel = "noopener noreferrer";
-      tdActions.append(a);
-    }
-    if (o.statut === "nouvelle") {
-      tdActions.append(
-        boutonMini("📝 À postuler", "Garder cette offre : elle part dans le pipeline", () => changerStatut(etat, o, "a_postuler")),
-        boutonMini("✖ Écarter", "Écarter cette offre", () => changerStatut(etat, o, "ecartee"))
-      );
-    }
-    const cvIndisponible = !iaConfiguree(etat) || !masterCVRempli(etat.masterCV?.contenu);
-    tdActions.append(
-      boutonMini("🎯 CV", cvIndisponible
-        ? "Configure ton IA (⚙️ Paramètres) et remplis ton CV (📄 Mon CV) pour l'utiliser"
-        : "Générer / voir le CV ciblé pour cette offre",
-        () => ouvrirApercuCV(etat, o), cvIndisponible)
-    );
     tdActions.append(
       boutonMini("🗑️", "Supprimer définitivement cette offre", async () => {
         if (!confirm(`Supprimer définitivement l'offre « ${o.titre} » (${o.entreprise}) ?`)) return;
@@ -193,6 +175,20 @@ function remplirTable(etat) {
         }
       })
     );
+    const cvIndisponible = !iaConfiguree(etat) || !masterCVRempli(etat.masterCV?.contenu);
+    tdActions.append(
+      boutonMini("🎯 CV", cvIndisponible
+        ? "Configure ton IA (⚙️ Paramètres) et remplis ton CV (📄 Mon CV) pour l'utiliser"
+        : "Générer / voir le CV ciblé pour cette offre",
+        () => ouvrirApercuCV(etat, o), cvIndisponible)
+    );
+    if (o.lien) {
+      const a = el("a", "lien-offre", "Voir ↗");
+      a.href = o.lien;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      tdActions.append(a);
+    }
 
     tr.append(
       tdTitre,

@@ -265,9 +265,16 @@ a.lien-offre:hover { text-decoration: underline; }
 .ligne-etiquette input[type="color"] { width: 34px; height: 28px; padding: 2px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); cursor: pointer; }
 .ligne-etiquette input[type="text"] { flex: 1; max-width: 260px; }
 
-.cellule-actions { white-space: nowrap; }
-.cellule-actions > * { margin-left: 6px; }
-.cellule-actions > :first-child { margin-left: 0; }
+/* Boutons d'action empilés l'un sous l'autre (🗑️, 🎯 CV, Voir ↗). */
+.cellule-actions > * {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 5px;
+  text-align: center;
+  white-space: nowrap;
+}
+.cellule-actions > :last-child { margin-bottom: 0; }
 
 .btn-mini {
   font: inherit;
