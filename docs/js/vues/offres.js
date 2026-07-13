@@ -3,9 +3,13 @@
 
 import { el, boutonMini, formaterDate, pointDomaine, nomDomaine, signalerErreur } from "../ui.js";
 import { STATUTS, patchChangementStatut } from "../statuts.js";
-import { creerOffre, majOffre, supprimerOffre, creerEtiquette, PALETTE_ETIQUETTES } from "../donnees.js";
+import { creerOffre, majOffre, supprimerOffre, creerEtiquette, PALETTE_ETIQUETTES, dernierCVGenere, creerCVGenere } from "../donnees.js";
 import { appelIA, iaConfiguree } from "../ia.js";
 import { lireUrlTexte } from "../lecture-web.js";
+import {
+  genererContenuCV, rendreApercuCV, masterCVRempli, STYLES_CV, styleCVPrefere, definirStyleCVPrefere,
+  genererContenuCVAvecGabarit, nettoyerHTML,
+} from "../cv.js";
 
 export function afficherOffres(etat) {
   remplirFiltreDomaines(etat);
@@ -171,6 +175,13 @@ function remplirTable(etat) {
         boutonMini("✖ Écarter", "Écarter cette offre", () => changerStatut(etat, o, "ecartee"))
       );
     }
+    const cvIndisponible = !iaConfiguree(etat) || !masterCVRempli(etat.masterCV?.contenu);
+    tdActions.append(
+      boutonMini("🎯 CV", cvIndisponible
+        ? "Configure ton IA (⚙️ Paramètres) et remplis ton CV (📄 Mon CV) pour l'utiliser"
+        : "Générer / voir le CV ciblé pour cette offre",
+        () => ouvrirApercuCV(etat, o), cvIndisponible)
+    );
     tdActions.append(
       boutonMini("🗑️", "Supprimer définitivement cette offre", async () => {
         if (!confirm(`Supprimer définitivement l'offre « ${o.titre} » (${o.entreprise}) ?`)) return;
@@ -393,4 +404,121 @@ function initImportIA(etat) {
       bouton.disabled = false;
     }
   });
+}
+
+/* ---------- Aperçu / génération du CV ciblé (bouton 🎯 CV) ---------- */
+
+/* Les 3 styles intégrés partagent un seul contenu JSON (stocké sous style="json") : changer
+   entre eux est gratuit. Un style personnalisé a son propre contenu HTML par offre (stocké
+   sous style=<id du style perso>), puisque l'IA réécrit le gabarit importé. */
+function estStyleIntegre(valeur) {
+  return STYLES_CV.some(([v]) => v === valeur);
+}
+
+async function ouvrirApercuCV(etat, offre) {
+  const fond = el("div", "voile-modale");
+  const boite = el("div", "card boite-modale boite-cv");
+  boite.append(el("h2", null, "📄 CV pour « " + offre.titre + " »"));
+
+  const ligneStyle = el("div", "ligne-recherche");
+  ligneStyle.append(document.createTextNode("🎨 Style : "));
+  const selStyle = document.createElement("select");
+  selStyle.className = "champ-critere";
+  selStyle.title = "Style visuel du CV (n'affecte que la présentation, pas le contenu)";
+  for (const [valeur, nom] of STYLES_CV) {
+    const opt = document.createElement("option");
+    opt.value = valeur;
+    opt.textContent = nom;
+    selStyle.append(opt);
+  }
+  if ((etat.stylesCV || []).length) {
+    const groupe = document.createElement("optgroup");
+    groupe.label = "Mes styles";
+    for (const style of etat.stylesCV) {
+      const opt = document.createElement("option");
+      opt.value = style.id;
+      opt.textContent = style.nom;
+      groupe.append(opt);
+    }
+    selStyle.append(groupe);
+  }
+  selStyle.value = styleCVPrefere();
+  if (selStyle.selectedIndex === -1) selStyle.value = STYLES_CV[0][0]; // style mémorisé supprimé depuis
+  ligneStyle.append(selStyle);
+  boite.append(ligneStyle);
+
+  const zoneApercu = document.createElement("div");
+  zoneApercu.id = "cv-impression";
+  boite.append(zoneApercu);
+  const message = el("p", "message-auth");
+  message.hidden = true;
+  boite.append(message);
+
+  const barre = el("div", "editeur-boutons");
+  const btnImprimer = el("button", "btn-mini btn-ok", "🖨️ Imprimer / Enregistrer en PDF");
+  btnImprimer.addEventListener("click", () => window.print());
+  const btnRegenerer = el("button", "btn-mini", "🔄 Régénérer");
+  const btnFermer = el("button", "btn-mini", "Fermer");
+  btnFermer.addEventListener("click", () => fond.remove());
+  barre.append(btnImprimer, btnRegenerer, btnFermer);
+  boite.append(barre);
+  fond.append(boite);
+  document.body.append(fond);
+
+  let contenuActuel = null;
+  let kindActuel = null; // "json" (styles intégrés) ou "html" (style personnalisé)
+  selStyle.addEventListener("change", () => {
+    definirStyleCVPrefere(selStyle.value);
+    const changementGratuit = estStyleIntegre(selStyle.value) && kindActuel === "json";
+    if (changementGratuit && contenuActuel) {
+      zoneApercu.innerHTML = "";
+      zoneApercu.append(rendreApercuCV(contenuActuel, selStyle.value));
+    } else {
+      charger(false);
+    }
+  });
+
+  async function charger(regenerer) {
+    zoneApercu.innerHTML = "";
+    message.textContent = "⏳ " + (regenerer ? "Génération d'un nouveau CV…" : "Chargement…");
+    message.className = "message-auth";
+    message.hidden = false;
+    btnRegenerer.disabled = true;
+    try {
+      const valeurStyle = selStyle.value;
+      if (estStyleIntegre(valeurStyle)) {
+        let ligne = regenerer ? null : await dernierCVGenere(offre.id, "json");
+        if (!ligne) {
+          const contenu = await genererContenuCV(etat, offre);
+          ligne = await creerCVGenere(etat.userId, offre.id, "json", contenu);
+        }
+        contenuActuel = ligne.contenu;
+        kindActuel = "json";
+        zoneApercu.append(rendreApercuCV(contenuActuel, valeurStyle));
+      } else {
+        const styleCV = (etat.stylesCV || []).find((s) => s.id === valeurStyle);
+        if (!styleCV) throw new Error("Ce style personnalisé n'existe plus.");
+        let ligne = regenerer ? null : await dernierCVGenere(offre.id, valeurStyle);
+        if (!ligne) {
+          const html = await genererContenuCVAvecGabarit(etat, offre, styleCV.gabarit_html);
+          ligne = await creerCVGenere(etat.userId, offre.id, valeurStyle, { html });
+        }
+        contenuActuel = ligne.contenu;
+        kindActuel = "html";
+        const page = document.createElement("div");
+        page.className = "cv-page";
+        page.contentEditable = "true";
+        page.innerHTML = nettoyerHTML(contenuActuel.html);
+        zoneApercu.append(page);
+      }
+      message.hidden = true;
+    } catch (e) {
+      message.textContent = "❌ " + (e.message || "La génération a échoué.");
+      message.className = "message-auth erreur";
+    } finally {
+      btnRegenerer.disabled = false;
+    }
+  }
+  btnRegenerer.addEventListener("click", () => charger(true));
+  await charger(false);
 }

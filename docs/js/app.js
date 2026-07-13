@@ -8,6 +8,7 @@ import { afficherOffres, initOffres } from "./vues/offres.js";
 import { afficherKanban } from "./vues/kanban.js";
 import { afficherEntreprises } from "./vues/entreprises.js";
 import { afficherCriteres } from "./vues/criteres.js";
+import { afficherCV } from "./vues/cv.js";
 import { afficherParametres } from "./vues/parametres.js";
 import { initRechercheLinkedin, afficherRecherche } from "./linkedin.js";
 
@@ -17,6 +18,7 @@ const etat = {
   entreprises: [],
   criteres: null,
   parametres: null,
+  masterCV: null,
   rafraichir: null, // rechargé + réaffiché ; utilisé par toutes les vues après une action
 };
 
@@ -26,6 +28,7 @@ function toutAfficher() {
   afficherKanban(etat);
   afficherEntreprises(etat);
   afficherCriteres(etat);
+  afficherCV(etat);
   afficherParametres(etat);
   afficherRecherche(etat);
 }

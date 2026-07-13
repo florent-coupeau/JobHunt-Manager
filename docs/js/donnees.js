@@ -25,12 +25,14 @@ function verifier(reponse, contexte) {
 /* ---------- Chargement global ---------- */
 
 export async function chargerTout(userId) {
-  const [offres, entreprises, criteres, parametres, etiquettes] = await Promise.all([
+  const [offres, entreprises, criteres, parametres, etiquettes, masterCV, stylesCV] = await Promise.all([
     supabase.from("offres").select("*").order("date_ajout", { ascending: false }),
     supabase.from("entreprises").select("*").order("nom"),
     supabase.from("criteres").select("*").maybeSingle(),
     supabase.from("parametres").select("*").maybeSingle(),
     supabase.from("etiquettes").select("*").order("ordre").order("nom"),
+    supabase.from("master_cv").select("*").maybeSingle(),
+    supabase.from("styles_cv").select("*").order("cree_le"),
   ]);
   let mesCriteres = verifier(criteres, "Chargement des critères");
   if (!mesCriteres) {
@@ -44,12 +46,26 @@ export async function chargerTout(userId) {
       "supabase/migrations/002_etiquettes.sql dans Supabase (SQL Editor → New query → Run)."
     );
   }
+  if (stylesCV.error && /styles_cv/.test(stylesCV.error.message)) {
+    throw new Error(
+      "La table des styles de CV n'existe pas encore : exécute la migration " +
+      "supabase/migrations/003_styles_cv.sql dans Supabase (SQL Editor → New query → Run)."
+    );
+  }
+  let monCV = verifier(masterCV, "Chargement du CV");
+  if (!monCV) {
+    // Premier lancement : on installe une ligne vide, remplie dans l'onglet Mon CV.
+    monCV = { user_id: userId, contenu: {} };
+    verifier(await supabase.from("master_cv").insert(monCV), "Création du CV");
+  }
   return {
     offres: verifier(offres, "Chargement des offres") || [],
     entreprises: verifier(entreprises, "Chargement des entreprises") || [],
     criteres: mesCriteres,
     parametres: verifier(parametres, "Chargement des paramètres") || null,
     etiquettes: verifier(etiquettes, "Chargement des étiquettes") || [],
+    masterCV: monCV,
+    stylesCV: verifier(stylesCV, "Chargement des styles de CV") || [],
   };
 }
 
@@ -109,4 +125,44 @@ export async function sauverCriteres(userId, criteres) {
     await supabase.from("criteres").upsert({ ...criteres, user_id: userId, derniere_maj: new Date().toISOString() }),
     "Enregistrement des critères"
   );
+}
+
+/* ---------- Master CV + CV générés ---------- */
+
+export async function sauverMasterCV(userId, contenu) {
+  verifier(
+    await supabase.from("master_cv").upsert({ user_id: userId, contenu, maj_le: new Date().toISOString() }),
+    "Enregistrement du CV"
+  );
+}
+
+/* Dernier CV généré pour une offre AVEC ce style précis (ou null si aucun n'existe encore).
+   `style` = "json" pour les 3 styles intégrés (contenu identique, CSS différent),
+   ou l'id d'un style personnalisé (contenu propre à son gabarit). */
+export async function dernierCVGenere(offreId, style) {
+  return verifier(
+    await supabase.from("cv_generes").select("*").eq("offre_id", offreId).eq("style", style)
+      .order("cree_le", { ascending: false }).limit(1).maybeSingle(),
+    "Chargement du CV généré"
+  );
+}
+
+export async function creerCVGenere(userId, offreId, style, contenu) {
+  return verifier(
+    await supabase.from("cv_generes").insert({ user_id: userId, offre_id: offreId, style, contenu }).select().single(),
+    "Enregistrement du CV généré"
+  );
+}
+
+/* ---------- Styles de CV personnalisés (gabarit HTML importé d'un .docx) ---------- */
+
+export async function creerStyleCV(userId, nom, gabaritHtml) {
+  return verifier(
+    await supabase.from("styles_cv").insert({ user_id: userId, nom, gabarit_html: gabaritHtml }).select().single(),
+    "Enregistrement du style de CV"
+  );
+}
+
+export async function supprimerStyleCV(id) {
+  verifier(await supabase.from("styles_cv").delete().eq("id", id), "Suppression du style de CV");
 }

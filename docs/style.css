@@ -523,6 +523,116 @@ a.lien-offre:hover { text-decoration: underline; }
 .boite-modale .btn-principal { width: auto; margin-top: 0; padding: 9px 20px; }
 .boite-modale .editeur-boutons { margin-top: 14px; align-items: center; }
 
+/* ===== Mon CV : aperçu + impression ===== */
+.boite-cv { max-width: 900px; }
+
+.cv-page {
+  /* Un CV imprimé doit rester lisible sur papier : fond blanc / texte noir fixes,
+     indépendants du thème clair/sombre de l'application. */
+  background: #ffffff;
+  color: #1a1a1a;
+  max-width: 210mm;
+  margin: 0 auto;
+  padding: 22px 26px;
+  border: 1px solid #d9d8d0;
+  border-radius: 8px;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.cv-entete { text-align: center; margin-bottom: 10px; }
+.cv-nom { margin: 0; font-size: 22px; }
+.cv-titre-recherche { margin: 2px 0; color: #4a4a45; font-weight: 600; }
+.cv-contacts { margin: 2px 0; font-size: 12px; color: #57564f; }
+.cv-accroche { margin: 12px 0; font-style: italic; color: #33322e; }
+.cv-section { margin-top: 14px; }
+.cv-titre-section {
+  margin: 0 0 8px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #57564f;
+  border-bottom: 1px solid #d9d8d0;
+  padding-bottom: 3px;
+}
+.cv-item { margin-bottom: 10px; }
+.cv-item-entete { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.cv-item-titre { font-weight: 600; }
+.cv-item-lieu { color: #57564f; font-size: 12px; }
+.cv-item-periode { margin-left: auto; color: #898781; font-size: 12px; white-space: nowrap; }
+.cv-details, .cv-competence { margin: 4px 0; }
+.cv-puces { margin: 4px 0 0; padding-left: 18px; }
+.cv-puces li { margin: 2px 0; }
+
+/* Les blocs retouchables se distinguent au survol/focus (invisible à l'impression).
+   Un style personnalisé (gabarit Word) rend toute la page éditable d'un bloc — d'où
+   le sélecteur direct .cv-page[contenteditable] en plus des blocs internes. */
+.cv-page [contenteditable="true"]:hover,
+.cv-page [contenteditable="true"]:focus,
+.cv-page[contenteditable="true"]:hover,
+.cv-page[contenteditable="true"]:focus {
+  outline: 1px dashed #b7b6ac;
+  outline-offset: 2px;
+}
+
+/* --- Style Moderne : bandeau d'accent coloré, sections marquées --- */
+.cv-page.style-moderne {
+  padding: 0 0 22px;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.cv-page.style-moderne .cv-entete {
+  background: #2a5f9e;
+  color: #fff;
+  padding: 26px 28px 20px;
+  border-radius: 7px 7px 0 0;
+  margin-bottom: 16px;
+}
+.cv-page.style-moderne .cv-nom { color: #fff; }
+.cv-page.style-moderne .cv-titre-recherche { color: #cfe0f5; }
+.cv-page.style-moderne .cv-contacts { color: #cfe0f5; }
+.cv-page.style-moderne .cv-accroche,
+.cv-page.style-moderne .cv-section { padding: 0 28px; }
+.cv-page.style-moderne .cv-titre-section {
+  color: #2a5f9e;
+  text-transform: none;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0;
+  border-bottom: 2px solid #2a5f9e;
+}
+.cv-page.style-moderne .cv-item-periode { color: #2a5f9e; font-weight: 600; }
+
+/* --- Style Minimaliste : beaucoup de blanc, typographie fine --- */
+.cv-page.style-minimal { padding: 34px 40px; border: none; }
+.cv-page.style-minimal .cv-entete { text-align: left; }
+.cv-page.style-minimal .cv-nom { font-weight: 300; font-size: 26px; letter-spacing: 0.01em; }
+.cv-page.style-minimal .cv-titre-recherche { font-weight: 400; }
+.cv-page.style-minimal .cv-titre-section {
+  border-bottom: none;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  color: #a8a79e;
+}
+.cv-page.style-minimal .cv-item-titre { font-weight: 500; }
+.cv-page.style-minimal .cv-item-periode { font-style: italic; }
+
+@media print {
+  body * { visibility: hidden; }
+  #cv-impression, #cv-impression * { visibility: visible; }
+  #cv-impression {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+  .cv-page { border: none; border-radius: 0; margin: 0; max-width: none; }
+  .cv-page [contenteditable="true"]:hover,
+  .cv-page [contenteditable="true"]:focus,
+  .cv-page[contenteditable="true"]:hover,
+  .cv-page[contenteditable="true"]:focus { outline: none; }
+}
+
 /* ===== Mobile ===== */
 @media (max-width: 640px) {
   .topbar { gap: 10px; padding: 10px 14px; }
